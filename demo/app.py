@@ -47,8 +47,8 @@ embedder.load_model()
 core_router = get_core_router()
 core_router.load_models()
 
-carrot_knn_router = get_carrot_router("knn")
-carrot_knn_router.load_model()
+carrot_router = get_carrot_router()
+carrot_router.load_model()
 
 llm_client = get_llm_client()
 judge = get_judge()
@@ -167,14 +167,14 @@ def generate_result_analysis(core_result, carrot_result):
         # Add CARROT bar
         fig.add_trace(
             go.Bar(
-                name='🥕 CARROT-KNN',
+                name='🥕 CARROT',
                 x=['CARROT'],
                 y=[carrot_val],
                 text=[carrot_text],
                 textposition='outside',
                 marker_color=carrot_color,
                 showlegend=(idx == 1),  # Only show legend for first subplot
-                hovertemplate=f'CARROT-KNN: {carrot_text}<extra></extra>'
+                hovertemplate=f'CARROT: {carrot_text}<extra></extra>'
             ),
             row=1, col=idx
         )
@@ -194,7 +194,7 @@ def generate_result_analysis(core_result, carrot_result):
 
     # Update overall layout
     fig.update_layout(
-        title_text="📈 Result Analysis: CoRE vs CARROT-KNN",
+        title_text="📈 Result Analysis: CoRE vs CARROT",
         title_font=dict(size=24, color='#9b59b6', family='Arial Black'),
         title_x=0.5,
         height=500,
@@ -238,13 +238,13 @@ def generate_visualizations(
     query: str
 ):
     """
-    Generate interactive visualizations for CoRE and CARROT-KNN
+    Generate interactive visualizations for CoRE and CARROT
 
     Args:
         query: User query text
 
     Returns:
-        Tuple of (core_figure, carrot_knn_figure)
+        Tuple of (core_figure, carrot_figure)
     """
     if not query.strip():
         return None, None
@@ -255,10 +255,10 @@ def generate_visualizations(
     # Generate CoRE visualization (no budget line)
     core_fig = generate_core_visualization(embedding, core_router, budget=None)
 
-    # Generate CARROT-KNN visualization
-    carrot_knn_fig = generate_carrot_visualization(embedding, carrot_knn_router)
+    # Generate CARROT visualization
+    carrot_fig = generate_carrot_visualization(embedding, carrot_router)
 
-    return core_fig, carrot_knn_fig
+    return core_fig, carrot_fig
 
 
 # ============================================================================
@@ -279,7 +279,7 @@ def run_single_inference_internal(
         query: User query text
         llm_name: Selected LLM name
         embedding: Pre-computed embedding (optional, will compute if None)
-        method_name: "CoRE" or "CARROT-KNN"
+        method_name: "CoRE" or "CARROT"
 
     Returns:
         Dictionary with all results
@@ -317,8 +317,8 @@ def run_single_inference_internal(
 
         predicted_cost = predicted_count * llm_size
     else:
-        # CARROT-KNN
-        Y_hat_score, Y_hat_count = carrot_knn_router.model.predict(embedding)
+        # CARROT
+        Y_hat_score, Y_hat_count = carrot_router.model.predict(embedding)
         Y_hat_score = np.clip(Y_hat_score, 0, 1)
         Y_hat_count = np.maximum(Y_hat_count, 0)
 
@@ -332,14 +332,14 @@ def run_single_inference_internal(
         print(f"Y_hat_score: {Y_hat_score[0]}")
         print(f"Y_hat_count: {Y_hat_count[0]}")
 
-        llm_names = list(carrot_knn_router.llm_pool.keys())
+        llm_names = list(carrot_router.llm_pool.keys())
         print(f"LLM pool: {llm_names} (count={len(llm_names)})")
         print(f"Requested LLM: {llm_name}")
 
         llm_idx = llm_names.index(llm_name)
         print(f"LLM index: {llm_idx}")
 
-        llm_size = carrot_knn_router.llm_pool[llm_name]["size"]
+        llm_size = carrot_router.llm_pool[llm_name]["size"]
 
         predicted_score = Y_hat_score[0, llm_idx]
         predicted_count = Y_hat_count[0, llm_idx]
@@ -412,7 +412,7 @@ def run_single_inference(
         if llm_name in core_router.predictors:
             method_name = "CoRE"
         else:
-            method_name = "CARROT-KNN"
+            method_name = "CARROT"
 
         # Call internal function
         result_dict = run_single_inference_internal(query, llm_name, token_limit, None, method_name)
@@ -455,7 +455,7 @@ def process_query(
     query: str,
     lambda_val: float,
     use_core: bool,
-    use_carrot_knn: bool,
+    use_carrot: bool,
     progress=gr.Progress()
 ):
     """
@@ -465,7 +465,7 @@ def process_query(
         query: User query text
         lambda_val: Lambda value (0-1)
         use_core: Whether to use CoRE
-        use_carrot_knn: Whether to use CARROT-KNN
+        use_carrot: Whether to use CARROT
         progress: Gradio progress tracker
 
     Returns:
@@ -474,7 +474,7 @@ def process_query(
     if not query.strip():
         return "<p style='color: red;'>Please enter a query!</p>", None
 
-    if not (use_core or use_carrot_knn):
+    if not (use_core or use_carrot):
         return "<p style='color: red;'>Please select at least one routing method!</p>", None
 
     # No budget constraint
@@ -484,8 +484,8 @@ def process_query(
     methods = []
     if use_core:
         methods.append(("CoRE", core_router))
-    if use_carrot_knn:
-        methods.append(("CARROT-KNN", carrot_knn_router))
+    if use_carrot:
+        methods.append(("CARROT", carrot_router))
 
     methods_text = " and ".join([m[0] for m in methods])
 
@@ -534,16 +534,8 @@ def process_query(
                     <div style="font-size: 16px; font-weight: bold; color: #333; margin-top: 5px;">{core_result['llm_name']}</div>
                 </div>
                 <div style="background: #f8f9fa; padding: 12px; border-radius: 5px; border-left: 3px solid #667eea;">
-                    <div style="font-size: 12px; color: #666; text-transform: uppercase;">Token Limit</div>
+                    <div style="font-size: 12px; color: #666; text-transform: uppercase;">Token Number</div>
                     <div style="font-size: 16px; font-weight: bold; color: #333; margin-top: 5px;">{core_result['token_limit']}</div>
-                </div>
-                <div style="background: #f8f9fa; padding: 12px; border-radius: 5px; border-left: 3px solid #667eea;">
-                    <div style="font-size: 12px; color: #666; text-transform: uppercase;">Predicted Score</div>
-                    <div style="font-size: 16px; font-weight: bold; color: #333; margin-top: 5px;">{core_result['predicted_score']:.3f}</div>
-                </div>
-                <div style="background: #f8f9fa; padding: 12px; border-radius: 5px; border-left: 3px solid #667eea;">
-                    <div style="font-size: 12px; color: #666; text-transform: uppercase;">Predicted Cost</div>
-                    <div style="font-size: 16px; font-weight: bold; color: #333; margin-top: 5px;">{core_result['predicted_cost']:.1f}</div>
                 </div>
             </div>
         </div>
@@ -554,7 +546,7 @@ def process_query(
         routing_info_html += f"""
         <div style="background: white; border: 1px solid #e0e0e0; border-radius: 10px; padding: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
             <div style="font-size: 20px; font-weight: bold; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid #f39c12;">
-                🥕 CARROT-KNN
+                🥕 CARROT
             </div>
             <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin: 15px 0;">
                 <div style="background: #f8f9fa; padding: 12px; border-radius: 5px; border-left: 3px solid #f39c12;">
@@ -562,16 +554,8 @@ def process_query(
                     <div style="font-size: 16px; font-weight: bold; color: #333; margin-top: 5px;">{carrot_result['llm_name']}</div>
                 </div>
                 <div style="background: #f8f9fa; padding: 12px; border-radius: 5px; border-left: 3px solid #f39c12;">
-                    <div style="font-size: 12px; color: #666; text-transform: uppercase;">Token Limit</div>
+                    <div style="font-size: 12px; color: #666; text-transform: uppercase;">Token Number</div>
                     <div style="font-size: 16px; font-weight: bold; color: #333; margin-top: 5px;">{carrot_result['token_limit']}</div>
-                </div>
-                <div style="background: #f8f9fa; padding: 12px; border-radius: 5px; border-left: 3px solid #f39c12;">
-                    <div style="font-size: 12px; color: #666; text-transform: uppercase;">Predicted Score</div>
-                    <div style="font-size: 16px; font-weight: bold; color: #333; margin-top: 5px;">{carrot_result['predicted_score']:.3f}</div>
-                </div>
-                <div style="background: #f8f9fa; padding: 12px; border-radius: 5px; border-left: 3px solid #f39c12;">
-                    <div style="font-size: 12px; color: #666; text-transform: uppercase;">Predicted Cost</div>
-                    <div style="font-size: 16px; font-weight: bold; color: #333; margin-top: 5px;">{carrot_result['predicted_cost']:.1f}</div>
                 </div>
             </div>
         </div>
@@ -663,23 +647,10 @@ def process_query(
 
     # CoRE column
     if core_response_result:
-        # Format the CoRE input with highlighted instructional prompt
-        core_input_html = format_prompt_with_highlight(
-            core_response_result['original_query'],
-            core_response_result.get('actual_prompt', core_response_result['original_query']),
-            str(core_response_result['token_limit'])
-        )
-
         llm_responses_html += f"""
         <div style="background: white; border: 1px solid #e0e0e0; border-radius: 10px; padding: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
             <div style="font-size: 20px; font-weight: bold; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid #667eea;">
                 🎯 CoRE
-            </div>
-            <div style="margin-bottom: 15px;">
-                <div style="background: #f8f9fa; padding: 12px; border-radius: 5px; border-left: 3px solid #667eea; height: 120px; display: flex; flex-direction: column;">
-                    <div style="font-size: 12px; color: #666; text-transform: uppercase; margin-bottom: 8px;">Input</div>
-                    <div style="font-size: 14px; color: #333; font-family: monospace; white-space: pre-wrap; overflow-y: auto; flex: 1;">{core_input_html}</div>
-                </div>
             </div>
             <div style="margin-bottom: 15px;">
                 <div style="background: #f8f9fa; padding: 12px; border-radius: 5px; border-left: 3px solid #667eea; height: 120px; display: flex; flex-direction: column;">
@@ -722,13 +693,7 @@ def process_query(
         llm_responses_html += f"""
         <div style="background: white; border: 1px solid #e0e0e0; border-radius: 10px; padding: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
             <div style="font-size: 20px; font-weight: bold; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid #f39c12;">
-                🥕 CARROT-KNN
-            </div>
-            <div style="margin-bottom: 15px;">
-                <div style="background: #f8f9fa; padding: 12px; border-radius: 5px; border-left: 3px solid #f39c12; height: 120px; display: flex; flex-direction: column;">
-                    <div style="font-size: 12px; color: #666; text-transform: uppercase; margin-bottom: 8px;">Input</div>
-                    <div style="font-size: 14px; color: #333; font-family: monospace; white-space: pre-wrap; overflow-y: auto; flex: 1;">{carrot_response_result.get('actual_prompt', carrot_response_result['original_query'])}</div>
-                </div>
+                🥕 CARROT
             </div>
             <div style="margin-bottom: 15px;">
                 <div style="background: #f8f9fa; padding: 12px; border-radius: 5px; border-left: 3px solid #f39c12; height: 120px; display: flex; flex-direction: column;">
@@ -995,7 +960,7 @@ def generate_results_html(
                         <tr style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
                             <th style="padding: 15px; text-align: left; border: 1px solid #ddd;">Metric</th>
                             <th style="padding: 15px; text-align: center; border: 1px solid #ddd;">🎯 CoRE</th>
-                            <th style="padding: 15px; text-align: center; border: 1px solid #ddd;">🥕 CARROT-KNN</th>
+                            <th style="padding: 15px; text-align: center; border: 1px solid #ddd;">🥕 CARROT</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -1120,8 +1085,8 @@ def create_demo():
                         label="CoRE",
                         value=True
                     )
-                    knn_check = gr.Checkbox(
-                        label="CARROT-KNN",
+                    carrot_check = gr.Checkbox(
+                        label="CARROT",
                         value=True
                     )
 
@@ -1142,7 +1107,7 @@ def create_demo():
                 # Visualization plots
                 with gr.Row():
                     core_plot = gr.Plot(label="CoRE: Cost-Quality Curves", visible=False)
-                    carrot_knn_plot = gr.Plot(label="CARROT-KNN: Cost-Quality Points", visible=False)
+                    carrot_plot = gr.Plot(label="CARROT: Cost-Quality Points", visible=False)
 
                 # Selection UI (both methods in one compact layout)
                 with gr.Column(visible=False) as selection_row:
@@ -1165,7 +1130,7 @@ def create_demo():
                         )
 
                     # CARROT Selection - single LLM dropdown
-                    gr.Markdown("**CARROT-KNN Selection:** Choose LLM from the points above (always unlimited)")
+                    gr.Markdown("**CARROT Selection:** Choose LLM from the points above (always unlimited)")
                     carrot_llm_dropdown = gr.Dropdown(
                         label="CARROT: LLM",
                         choices=list(config.LLM_POOL.keys()),
@@ -1185,7 +1150,7 @@ def create_demo():
                 query_input,
                 lambda_input,
                 core_check,
-                knn_check
+                carrot_check
             ],
             outputs=[direct_results, result_analysis_plot]
         )
@@ -1195,14 +1160,14 @@ def create_demo():
             core_fig, carrot_fig = generate_visualizations(query)
             return {
                 core_plot: gr.update(value=core_fig, visible=True),
-                carrot_knn_plot: gr.update(value=carrot_fig, visible=True),
+                carrot_plot: gr.update(value=carrot_fig, visible=True),
                 selection_row: gr.update(visible=True)
             }
 
         visualize_btn.click(
             fn=show_visualizations,
             inputs=[query_input],
-            outputs=[core_plot, carrot_knn_plot, selection_row]
+            outputs=[core_plot, carrot_plot, selection_row]
         )
 
         # Connect single button to run both methods
@@ -1212,14 +1177,14 @@ def create_demo():
                 return "<p style='color: red;'>Please enter a query!</p>", None
 
             if not core_llm or not carrot_llm:
-                return "<p style='color: red;'>Please select LLMs for both CoRE and CARROT-KNN!</p>", None
+                return "<p style='color: red;'>Please select LLMs for both CoRE and CARROT!</p>", None
 
             # Step 1: Generate embedding
             progress(0.1, desc="Generating query embedding...")
             embedding = embedder.embed(query)
 
             # Step 2: Computing predictions
-            progress(0.2, desc=f"Computing predictions for CoRE ({core_llm}) and CARROT-KNN ({carrot_llm})...")
+            progress(0.2, desc=f"Computing predictions for CoRE ({core_llm}) and CARROT ({carrot_llm})...")
 
             # Get predictions (without running inference yet)
             # CoRE predictions
@@ -1242,7 +1207,7 @@ def create_demo():
             core_pred_cost = core_pred_count * llm_size
 
             # CARROT predictions
-            Y_hat_score, Y_hat_count = carrot_knn_router.model.predict(embedding)
+            Y_hat_score, Y_hat_count = carrot_router.model.predict(embedding)
             # Y_hat_score = np.clip(Y_hat_score, 0, 1)
             Y_hat_count = np.maximum(Y_hat_count, 0)
 
@@ -1256,14 +1221,14 @@ def create_demo():
             print(f"Y_hat_score: {Y_hat_score[0]}")
             print(f"Y_hat_count: {Y_hat_count[0]}")
 
-            llm_names = list(carrot_knn_router.llm_pool.keys())
+            llm_names = list(carrot_router.llm_pool.keys())
             print(f"LLM pool: {llm_names} (count={len(llm_names)})")
             print(f"Requested LLM: {carrot_llm}")
 
             llm_idx = llm_names.index(carrot_llm)
             print(f"LLM index: {llm_idx}")
 
-            carrot_llm_size = carrot_knn_router.llm_pool[carrot_llm]["size"]
+            carrot_llm_size = carrot_router.llm_pool[carrot_llm]["size"]
             carrot_pred_score = Y_hat_score[0, llm_idx]
             carrot_pred_count = Y_hat_count[0, llm_idx]
             carrot_pred_cost = carrot_pred_count * carrot_llm_size
@@ -1277,7 +1242,7 @@ def create_demo():
             core_actual_cost = core_tokens * llm_size
 
             # Step 4: Calling CARROT LLM
-            progress(0.6, desc=f"Querying CARROT-KNN LLM ({carrot_llm} @ unlimited)...")
+            progress(0.6, desc=f"Querying CARROT LLM ({carrot_llm} @ unlimited)...")
             carrot_response, carrot_tokens, carrot_actual_prompt = llm_client.call_llm_by_name(carrot_llm, query, "unlimited")
             carrot_actual_cost = carrot_tokens * carrot_llm_size
 
@@ -1344,23 +1309,15 @@ def create_demo():
                                 <div style="font-size: 16px; font-weight: bold; color: #333; margin-top: 5px;">{core_result['llm_name']}</div>
                             </div>
                             <div style="background: #f8f9fa; padding: 12px; border-radius: 5px; border-left: 3px solid #667eea;">
-                                <div style="font-size: 12px; color: #666; text-transform: uppercase;">Token Limit</div>
+                                <div style="font-size: 12px; color: #666; text-transform: uppercase;">Token Number</div>
                                 <div style="font-size: 16px; font-weight: bold; color: #333; margin-top: 5px;">{core_result['token_limit']}</div>
-                            </div>
-                            <div style="background: #f8f9fa; padding: 12px; border-radius: 5px; border-left: 3px solid #667eea;">
-                                <div style="font-size: 12px; color: #666; text-transform: uppercase;">Predicted Score</div>
-                                <div style="font-size: 16px; font-weight: bold; color: #333; margin-top: 5px;">{core_result['predicted_score']:.3f}</div>
-                            </div>
-                            <div style="background: #f8f9fa; padding: 12px; border-radius: 5px; border-left: 3px solid #667eea;">
-                                <div style="font-size: 12px; color: #666; text-transform: uppercase;">Predicted Cost</div>
-                                <div style="font-size: 16px; font-weight: bold; color: #333; margin-top: 5px;">{core_result['predicted_cost']:.1f}</div>
                             </div>
                         </div>
                     </div>
 
                     <div style="background: white; border: 1px solid #e0e0e0; border-radius: 10px; padding: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                         <div style="font-size: 20px; font-weight: bold; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid #f39c12;">
-                            🥕 CARROT-KNN
+                            🥕 CARROT
                         </div>
                         <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin: 15px 0;">
                             <div style="background: #f8f9fa; padding: 12px; border-radius: 5px; border-left: 3px solid #f39c12;">
@@ -1368,16 +1325,8 @@ def create_demo():
                                 <div style="font-size: 16px; font-weight: bold; color: #333; margin-top: 5px;">{carrot_result['llm_name']}</div>
                             </div>
                             <div style="background: #f8f9fa; padding: 12px; border-radius: 5px; border-left: 3px solid #f39c12;">
-                                <div style="font-size: 12px; color: #666; text-transform: uppercase;">Token Limit</div>
+                                <div style="font-size: 12px; color: #666; text-transform: uppercase;">Token Number</div>
                                 <div style="font-size: 16px; font-weight: bold; color: #333; margin-top: 5px;">unlimited</div>
-                            </div>
-                            <div style="background: #f8f9fa; padding: 12px; border-radius: 5px; border-left: 3px solid #f39c12;">
-                                <div style="font-size: 12px; color: #666; text-transform: uppercase;">Predicted Score</div>
-                                <div style="font-size: 16px; font-weight: bold; color: #333; margin-top: 5px;">{carrot_result['predicted_score']:.3f}</div>
-                            </div>
-                            <div style="background: #f8f9fa; padding: 12px; border-radius: 5px; border-left: 3px solid #f39c12;">
-                                <div style="font-size: 12px; color: #666; text-transform: uppercase;">Predicted Cost</div>
-                                <div style="font-size: 16px; font-weight: bold; color: #333; margin-top: 5px;">{carrot_result['predicted_cost']:.1f}</div>
                             </div>
                         </div>
                     </div>
@@ -1392,7 +1341,7 @@ def create_demo():
                         <tr style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
                             <th style="padding: 15px; text-align: left; border: 1px solid #ddd;">Metric</th>
                             <th style="padding: 15px; text-align: center; border: 1px solid #ddd;">🎯 CoRE</th>
-                            <th style="padding: 15px; text-align: center; border: 1px solid #ddd;">🥕 CARROT-KNN</th>
+                            <th style="padding: 15px; text-align: center; border: 1px solid #ddd;">🥕 CARROT</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -1448,12 +1397,6 @@ def create_demo():
                         </div>
                         <div style="margin-bottom: 15px;">
                             <div style="background: #f8f9fa; padding: 12px; border-radius: 5px; border-left: 3px solid #667eea; height: 120px; display: flex; flex-direction: column;">
-                                <div style="font-size: 12px; color: #666; text-transform: uppercase; margin-bottom: 8px;">Input</div>
-                                <div style="font-size: 14px; color: #333; font-family: monospace; white-space: pre-wrap; overflow-y: auto; flex: 1;">{core_input_html_viz}</div>
-                            </div>
-                        </div>
-                        <div style="margin-bottom: 15px;">
-                            <div style="background: #f8f9fa; padding: 12px; border-radius: 5px; border-left: 3px solid #667eea; height: 120px; display: flex; flex-direction: column;">
                                 <div style="font-size: 12px; color: #666; text-transform: uppercase; margin-bottom: 8px;">
                                     <span style="text-decoration: underline; text-decoration-color: red; text-decoration-thickness: 2px;">Output</span>
                                 </div>
@@ -1484,13 +1427,7 @@ def create_demo():
 
                     <div style="background: white; border: 1px solid #e0e0e0; border-radius: 10px; padding: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                         <div style="font-size: 20px; font-weight: bold; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid #f39c12;">
-                            🥕 CARROT-KNN
-                        </div>
-                        <div style="margin-bottom: 15px;">
-                            <div style="background: #f8f9fa; padding: 12px; border-radius: 5px; border-left: 3px solid #f39c12; height: 120px; display: flex; flex-direction: column;">
-                                <div style="font-size: 12px; color: #666; text-transform: uppercase; margin-bottom: 8px;">Input</div>
-                                <div style="font-size: 14px; color: #333; font-family: monospace; white-space: pre-wrap; overflow-y: auto; flex: 1;">{carrot_actual_prompt}</div>
-                            </div>
+                            🥕 CARROT
                         </div>
                         <div style="margin-bottom: 15px;">
                             <div style="background: #f8f9fa; padding: 12px; border-radius: 5px; border-left: 3px solid #f39c12; height: 120px; display: flex; flex-direction: column;">

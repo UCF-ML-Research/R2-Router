@@ -43,12 +43,12 @@ LLM_POOL = {
         "checkpoint": CHECKPOINTS_DIR / f"Llama-3.2-3B-Instruct_ridge_alpha10.0",
         "csv": DATA_DIR / "Llama-3.2-3B-Instruct.csv"
     },
-    # "Qwen3-235B-A22B-Instruct-2507": {
-    #     "size": 0.88,
-    #     "openrouter_id": "qwen/qwen3-235b-a22b-2507",
-    #     "checkpoint": CHECKPOINTS_DIR / f"Qwen3-235B-A22B-Instruct-2507_ridge_alpha10.0",
-    #     "csv": DATA_DIR / "Qwen3-235B-A22B-Instruct-2507.csv"
-    # },
+    "Qwen3-235B-A22B-Instruct-2507": {
+        "size": 0.88,
+        "openrouter_id": "qwen/qwen3-235b-a22b-2507",
+        "checkpoint": CHECKPOINTS_DIR / f"Qwen3-235B-A22B-Instruct-2507_ridge_alpha10.0",
+        "csv": DATA_DIR / "Qwen3-235B-A22B-Instruct-2507.csv"
+    },
     "Qwen3-0.6B": {
         "size": 0.0173,
         "openrouter_id": "qwen/qwen-2.5-7b-instruct",  # Use closest available
@@ -59,13 +59,6 @@ LLM_POOL = {
 
 # Token limits available (must match training)
 TOKEN_LIMITS = [10, 20, 30, 40, 50, 80, 100, 150, 200, 300, 500, 800, 1200, 2000, 4000, "unlimited"]
-
-# ============================================================================
-# CARROT Baseline Paths
-# ============================================================================
-
-CARROT_KNN_DIR = CHECKPOINTS_DIR / "carrot_knn"
-CARROT_LINEAR_DIR = CHECKPOINTS_DIR / "carrot_linear"
 
 # ============================================================================
 # Embedding Configuration
@@ -159,10 +152,10 @@ JUDGE_TIMEOUT = 20
 # Default values for UI
 DEFAULT_LAMBDA = 0.5
 DEFAULT_BUDGET = None  # None = unlimited
-DEFAULT_METHODS = ["CoRE", "CARROT-KNN"]  # Default selected methods
+DEFAULT_METHODS = ["CoRE", "CARROT"]  # Default selected methods
 
 # Available methods
-AVAILABLE_METHODS = ["CoRE", "CARROT-KNN", "CARROT-Linear"]
+AVAILABLE_METHODS = ["CoRE", "CARROT"]
 
 # UI theme
 GRADIO_THEME = "default"  # "default", "soft", "glass", etc.
@@ -217,11 +210,9 @@ def validate_config():
     if not CHECKPOINTS_DIR.exists():
         errors.append(f"Checkpoints directory not found: {CHECKPOINTS_DIR}")
 
-    # Check CARROT checkpoints
-    if not CARROT_KNN_DIR.exists():
-        errors.append(f"CARROT-KNN checkpoint not found: {CARROT_KNN_DIR}")
-    if not CARROT_LINEAR_DIR.exists():
-        errors.append(f"CARROT-Linear checkpoint not found: {CARROT_LINEAR_DIR}")
+    # Check CoRE checkpoints contain CARROT predictors
+    # Note: CARROT now uses unlimited predictors from each LLM's checkpoint
+    # No separate CARROT checkpoint needed
 
     # Check CoRE checkpoints for each LLM
     for llm_name, llm_config in LLM_POOL.items():
@@ -245,7 +236,6 @@ if __name__ == "__main__":
     print("Configuration:")
     print(f"  Root directory: {ROOT_DIR}")
     print(f"  Checkpoints: {CHECKPOINTS_DIR}")
-    print(f"  Training scheme: {TRAINING_SCHEME}")
     print(f"  LLM pool: {len(LLM_POOL)} models")
     print(f"  Token limits: {len(TOKEN_LIMITS)} limits")
     print(f"  Judge model: {JUDGE_MODEL}")
