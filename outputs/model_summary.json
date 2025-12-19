@@ -1,0 +1,38 @@
+{
+  "model_config": {
+    "encoder_name": "bert-base-uncased",
+    "hidden_dim": 256,
+    "dropout_rate": 0.1,
+    "max_length": 512
+  },
+  "training_config": {
+    "epochs": 2,
+    "learning_rate": 2e-05,
+    "weight_decay": 0.01,
+    "batch_size": 8
+  },
+  "data_info": {
+    "train_batches": 1394,
+    "val_batches": 78,
+    "test_batches": 194
+  },
+  "final_performance": {
+    "test_loss": 0.05486375864441555,
+    "test_correlations": {
+      "10_pearson": 0.41253413453937143,
+      "10_spearman": 0.35808013480138584,
+      "20_pearson": 0.47444074990290297,
+      "20_spearman": 0.4519777752358276,
+      "30_pearson": 0.5006754118941739,
+      "30_spearman": 0.4807831176115899,
+      "40_pearson": 0.48649541460982115,
+      "40_spearman": 0.4758245826918435,
+      "50_pearson": 0.4748848106955613,
+      "50_spearman": 0.436449526777299,
+      "overall_pearson": 0.4882676714723418,
+      "overall_spearman": 0.46617196793551957
+    }
+  },
+  "best_val_loss": 0.05622120590832753,
+  "training_epochs": 2
+}

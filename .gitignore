@@ -1,0 +1,76 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environment
+.venv/
+venv/
+ENV/
+env/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Model checkpoints and cache
+checkpoints/
+*.pt
+*.pth
+*.joblib
+*.pkl
+*.pickle
+
+# Data files (large)
+data/*.csv
+data/*.pkl
+data/prompt_embeddings.pkl
+
+# Results and logs
+*.log
+nohup.out
+comparison_results/
+plots/
+ablation/results/
+ablation/embeddings/
+ablation/checkpoints*/
+ood_evaluation/category_splits/
+unirouter/checkpoints/
+
+# Temporary files
+/tmp/
+*.tmp
+*.bak
+*.swp
+
+# Gradio cache
+gradio_cached_examples/
+flagged/
