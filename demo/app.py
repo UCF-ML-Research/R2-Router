@@ -1041,7 +1041,7 @@ def create_demo():
         gr.Markdown("""
         # 🤖 CoRE Router Demo
 
-        Compare **CoRE** (Constrained Response Evaluator) against **CARROT** baselines for intelligent LLM routing.
+        <u>Co</u>rrelation-aware <u>R</u>outing <u>E</u>ngine against CARROT router baseline
         """)
 
         with gr.Row():
@@ -1504,6 +1504,6 @@ if __name__ == "__main__":
     demo.launch(
         server_name="0.0.0.0",  # Allow external access
         server_port=7860,        # Default Gradio port
-        share=True,              # Create public link via Gradio share
+        share=True,              # Create public link via Gradio share (72h expiry)
         show_error=True
     )
