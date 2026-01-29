@@ -66,11 +66,11 @@ TOKEN_LIMITS = [10, 20, 30, 40, 50, 80, 100, 150, 200, 300, 500, 800, 1200, 2000
 
 # Embedding model to use
 # Options: "vllm", "sentence-transformers", "openai", "huggingface"
-EMBEDDING_MODEL = "vllm"
+EMBEDDING_MODEL = "sentence-transformers"
 
 # vLLM Embedding Configuration (for Qwen3-0.6B)
 VLLM_ENCODER_NAME = "Qwen/Qwen3-0.6B"  # Model name or path
-VLLM_TENSOR_PARALLEL_SIZE = 2  # Number of GPUs for tensor parallelism
+VLLM_TENSOR_PARALLEL_SIZE = 1  # Number of GPUs for tensor parallelism (changed to 1 to save GPU memory)
 VLLM_MAX_MODEL_LEN = 1024  # Maximum sequence length
 VLLM_BATCH_SIZE = 32  # Batch size for embedding generation
 VLLM_DTYPE = "bfloat16"  # Data type for model
@@ -136,7 +136,7 @@ Output strictly in JSON:
 # ============================================================================
 
 # OpenRouter API key (set via environment variable)
-OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "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")
+OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "")
 
 # API endpoints
 OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"

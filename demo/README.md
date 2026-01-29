@@ -40,7 +40,7 @@ pip install -r requirements.txt
 Get your API key from [OpenRouter](https://openrouter.ai/) and set it as an environment variable:
 
 ```bash
-export OPENROUTER_API_KEY="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"
+export OPENROUTER_API_KEY="your-openrouter-api-key-here"
 ```
 
 Or add it to your `~/.bashrc` or `~/.zshrc`:
