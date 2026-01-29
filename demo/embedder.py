@@ -60,7 +60,7 @@ class VLLMEmbedder:
                 trust_remote_code=True,
                 disable_log_stats=True,
                 enforce_eager=True,
-                gpu_memory_utilization=0.20,
+                gpu_memory_utilization=0.15,
             )
 
             # Determine embedding dimension by generating a test embedding

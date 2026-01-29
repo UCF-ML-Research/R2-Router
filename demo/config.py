@@ -66,7 +66,7 @@ TOKEN_LIMITS = [10, 20, 30, 40, 50, 80, 100, 150, 200, 300, 500, 800, 1200, 2000
 
 # Embedding model to use
 # Options: "vllm", "sentence-transformers", "openai", "huggingface"
-EMBEDDING_MODEL = "sentence-transformers"
+EMBEDDING_MODEL = "vllm"
 
 # vLLM Embedding Configuration (for Qwen3-0.6B)
 VLLM_ENCODER_NAME = "Qwen/Qwen3-0.6B"  # Model name or path
@@ -76,7 +76,7 @@ VLLM_BATCH_SIZE = 32  # Batch size for embedding generation
 VLLM_DTYPE = "bfloat16"  # Data type for model
 
 # Sentence-Transformers model name (fallback)
-SENTENCE_TRANSFORMER_MODEL = "all-MiniLM-L6-v2"  # Fast and good quality
+SENTENCE_TRANSFORMER_MODEL = "all-MiniLM-L6-v2"  # Fallback (384-dim, only for testing)
 # Alternative: "all-mpnet-base-v2" (better quality, slower)
 
 # Embedding dimension (will be auto-detected from model)
