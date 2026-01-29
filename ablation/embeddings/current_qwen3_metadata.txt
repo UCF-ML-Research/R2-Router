@@ -1,0 +1,5 @@
+model_name: Qwen/Qwen3-0.6B (vLLM)
+model_key: current_qwen3
+n_prompts: 30968
+embedding_dim: 1024
+dtype: float64

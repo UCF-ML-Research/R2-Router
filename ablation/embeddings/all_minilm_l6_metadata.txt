@@ -1,0 +1,5 @@
+model_name: sentence-transformers/all-MiniLM-L6-v2
+model_key: all_minilm_l6
+n_prompts: 30968
+embedding_dim: 384
+dtype: float32

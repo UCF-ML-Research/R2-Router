@@ -1,0 +1,5 @@
+model_name: sentence-transformers/all-mpnet-base-v2
+model_key: all_mpnet_base
+n_prompts: 30968
+embedding_dim: 768
+dtype: float32
