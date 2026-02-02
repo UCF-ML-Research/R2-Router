@@ -1,6 +1,6 @@
-# CoRE Router - 公网部署指南
+# R2-Router - 公网部署指南
 
-本指南说明如何使用本地 GPU 部署 CoRE Router 并获得公网访问。
+本指南说明如何使用本地 GPU 部署 R2-Router 并获得公网访问。
 
 ## 🎯 部署方案
 

@@ -2,7 +2,7 @@
 
 ## Summary
 
-Implemented click handlers for interactive plot selection. Users can now click on any point in the CoRE curves or CARROT points to run inference with that specific LLM and token limit.
+Implemented click handlers for interactive plot selection. Users can now click on any point in the R2-Router curves or CARROT points to run inference with that specific LLM and token limit.
 
 ## Implementation
 
@@ -16,9 +16,9 @@ Implemented click handlers for interactive plot selection. Users can now click o
 
 **Workflow:**
 1. Generate embedding for query
-2. Determine if selection is from CoRE or CARROT
+2. Determine if selection is from R2-Router or CARROT
 3. Get predictions for the specific option:
-   - **CoRE**: Extract prediction from specific token limit
+   - **R2-Router**: Extract prediction from specific token limit
    - **CARROT**: Extract prediction for the specific LLM (unlimited)
 4. Call LLM with selected option
 5. Evaluate response with judge
@@ -29,8 +29,8 @@ Implemented click handlers for interactive plot selection. Users can now click o
 
 ```python
 # Determine router
-if llm_name in core_router.predictors:
-    method_name = "CoRE"
+if llm_name in r2_router.predictors:
+    method_name = "R2-Router"
     # Get prediction for specific token limit
     if token_limit == "unlimited":
         predicted_score = quality_unlimited[0]
@@ -111,7 +111,7 @@ carrot_knn_plot.select(
 
 **Already implemented in `demo/visualizer.py`:**
 
-**CoRE visualization** (line 102):
+**R2-Router visualization** (line 102):
 ```python
 customdata=[[llm_name, str(limit)] for limit in token_limits_sorted]
 ```
@@ -131,17 +131,17 @@ Each data point stores `[llm_name, token_limit]` in customdata, which is accesse
 
 1. **Enter query**
 2. **Click "Show Visualizations"**
-   - CoRE curves appear (left)
+   - R2-Router curves appear (left)
    - CARROT points appear (right)
 3. **Click on any point**:
-   - For CoRE: Click on any point on any curve
+   - For R2-Router: Click on any point on any curve
    - For CARROT: Click on any scatter point
 4. **System runs inference**:
    - Calls selected LLM with selected token limit
    - Evaluates response
    - Shows results below
 5. **Results displayed**:
-   - Method used (CoRE or CARROT-KNN)
+   - Method used (R2-Router or CARROT-KNN)
    - Selected LLM and token limit
    - Predictions vs actuals
    - Input prompt (with highlighting)
@@ -156,7 +156,7 @@ Each data point stores `[llm_name, token_limit]` in customdata, which is accesse
 ```
 1. Query: "What is the capital of France?"
 2. Click "Show Visualizations"
-3. See CoRE curves showing different cost-quality points
+3. See R2-Router curves showing different cost-quality points
 4. Click on Qwen3-235B curve at token limit 150
 ```
 
@@ -173,7 +173,7 @@ Each data point stores `[llm_name, token_limit]` in customdata, which is accesse
 
 Results displayed:
 ┌─────────────────────────────────────────┐
-│ CoRE                                    │
+│ R2-Router                                    │
 │ Selected: Qwen3-235B @ 150 tokens       │
 │ Predicted Risk: 0.850                   │
 │ Actual Risk: 0.900                      │

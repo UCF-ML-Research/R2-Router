@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Compare CoRE vs CARROT-Linear vs MIRT using all-MiniLM-L6-v2 embeddings.
+Compare R2-Router vs CARROT-Linear vs MIRT using all-MiniLM-L6-v2 embeddings.
 
 This script trains all three methods with the same embedding model and LLM pool
 to provide a fair comparison of routing performance.
@@ -19,7 +19,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from main.shared.dataset_manager import DatasetManager
 from main.shared.llm_loader import load_llm
 from main.shared.router_dataset import RouterDataset
-from main.core.predictor_sklearn import TokenPerformancePredictor, route_scores
+from main.r2.predictor_sklearn import TokenPerformancePredictor, route_scores
 from main.baselines.carrot.baselines_carrot import CarrotLinearBaseline, route_baseline
 from main.baselines.irt.baselines_irt import IRTBaseline
 
@@ -60,15 +60,15 @@ def compute_qnc(costs: np.ndarray, perfs: np.ndarray,
     return np.clip(qnc, 0, 1)
 
 
-def train_core_predictors(embedding_key: str,
+def train_r2_predictors(embedding_key: str,
                           embedding_path: str,
                           models: list,
                           dataset_manager: DatasetManager,
                           token_limits_score: list,
                           token_limits_count: list) -> dict:
-    """Train CoRE predictors for all LLMs with given embedding."""
+    """Train R2-Router predictors for all LLMs with given embedding."""
     print("\n" + "=" * 80)
-    print(f"Training CoRE Predictors with {embedding_key}")
+    print(f"Training R2-Router Predictors with {embedding_key}")
     print("=" * 80)
 
     # Load embeddings
@@ -84,7 +84,7 @@ def train_core_predictors(embedding_key: str,
     checkpoint_dir = f'ablation/checkpoints_comparison/{embedding_key}'
     os.makedirs(checkpoint_dir, exist_ok=True)
 
-    for model_name, model_size, csv_path in tqdm(models, desc=f"Training CoRE for {embedding_key}"):
+    for model_name, model_size, csv_path in tqdm(models, desc=f"Training R2-Router for {embedding_key}"):
         model_checkpoint = os.path.join(checkpoint_dir, model_name)
         os.makedirs(model_checkpoint, exist_ok=True)
 
@@ -222,7 +222,7 @@ def train_mirt(llms: dict, embedding_key: str, llm_texts: dict) -> IRTBaseline:
 def main():
     """Main comparison pipeline."""
     print("=" * 80)
-    print("Embedding Ablation: CoRE vs CARROT-Linear vs MIRT")
+    print("Embedding Ablation: R2-Router vs CARROT-Linear vs MIRT")
     print("=" * 80)
 
     # Use all-MiniLM-L6-v2 embedding
@@ -258,8 +258,8 @@ def main():
     # Lambda range for routing
     lambda_range = np.linspace(0, 1e-4, 100)
 
-    # Step 1: Train CoRE predictors
-    llms = train_core_predictors(
+    # Step 1: Train R2-Router predictors
+    llms = train_r2_predictors(
         embedding_key=embedding_key,
         embedding_path=embedding_path,
         models=models,
@@ -291,10 +291,10 @@ def main():
     print("Evaluating Routing Performance")
     print("=" * 80)
 
-    # Evaluate CoRE
-    print("\nEvaluating CoRE...")
-    core_costs, core_perfs = route_scores(llms, lambda_range)
-    core_audc = compute_audc(core_costs, core_perfs)
+    # Evaluate R2-Router
+    print("\nEvaluating R2-Router...")
+    r2_costs, core_perfs = route_scores(llms, lambda_range)
+    core_audc = compute_audc(r2_costs, core_perfs)
     core_peak = core_perfs.max()
 
     # Evaluate CARROT-Linear
@@ -339,13 +339,13 @@ def main():
     print(f"Target accuracy (95%): {target_accuracy:.4f}")
 
     # Global cost normalization
-    all_costs = np.concatenate([core_costs, carrot_costs, mirt_costs])
+    all_costs = np.concatenate([r2_costs, carrot_costs, mirt_costs])
     global_min_cost = np.min(all_costs)
     global_max_cost = np.max(all_costs)
     print(f"Global cost range: [{global_min_cost:.2f}, {global_max_cost:.2f}]")
 
     # Compute QNC for each method
-    core_qnc = compute_qnc(core_costs, core_perfs, target_accuracy, global_min_cost, global_max_cost)
+    core_qnc = compute_qnc(r2_costs, core_perfs, target_accuracy, global_min_cost, global_max_cost)
     carrot_qnc = compute_qnc(carrot_costs, carrot_perfs, target_accuracy, global_min_cost, global_max_cost)
     mirt_qnc = compute_qnc(mirt_costs, mirt_perfs, target_accuracy, global_min_cost, global_max_cost)
 
@@ -355,7 +355,7 @@ def main():
     print("=" * 80)
 
     results = {
-        'Method': ['CoRE', 'CARROT-Linear', 'MIRT'],
+        'Method': ['R2-Router', 'CARROT-Linear', 'MIRT'],
         'AUDC': [core_audc, carrot_audc, mirt_audc],
         'QNC': [core_qnc, carrot_qnc, mirt_qnc],
         'Peak_Accuracy': [core_peak, carrot_peak, mirt_peak]
@@ -374,9 +374,9 @@ def main():
     curves_data = []
     for i, lam in enumerate(lambda_range):
         curves_data.append({
-            'method': 'CoRE',
+            'method': 'R2-Router',
             'lambda': lam,
-            'cost': core_costs[i],
+            'cost': r2_costs[i],
             'performance': core_perfs[i]
         })
         curves_data.append({

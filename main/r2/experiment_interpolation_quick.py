@@ -15,7 +15,7 @@ from pathlib import Path
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from main.core.experiment_interpolation import (
+from main.r2.experiment_interpolation import (
     run_experiment,
     plot_results
 )
@@ -24,7 +24,7 @@ from main.core.experiment_interpolation import (
 def main():
     """Run quick interpolation experiment."""
     print("=" * 80)
-    print("CoRE Interpolation Experiment (Quick Version)")
+    print("R2-Router Interpolation Experiment (Quick Version)")
     print("=" * 80)
 
     # Use only ONE model for quick testing

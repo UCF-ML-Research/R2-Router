@@ -16,9 +16,9 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from main.shared.dataset_manager import DatasetManager
 from main.shared.router_dataset import RouterDataset
-from main.core.predictor_sklearn import TokenPerformancePredictor, route_scores
+from main.r2.predictor_sklearn import TokenPerformancePredictor, route_scores
 from main.baselines.carrot.baselines_carrot import CarrotKNNBaseline, CarrotLinearBaseline, route_baseline
-from main.core.experiment_interpolation import (
+from main.r2.experiment_interpolation import (
     TOKEN_LIMITS_NAMES,
     select_training_heads,
     train_with_subset_heads,
@@ -124,8 +124,8 @@ def main():
     all_perfs_list = []
     method_results = {}
 
-    # CoRE with different heads
-    for n_heads in tqdm(n_heads_list, desc="CoRE configurations"):
+    # R2-Router with different heads
+    for n_heads in tqdm(n_heads_list, desc="R2-Router configurations"):
         if n_heads == 16:
             trained_heads = TOKEN_LIMITS_NAMES.copy()
         else:
@@ -144,7 +144,7 @@ def main():
         costs, perfs = route_scores(llms, lambda_range)
         all_costs_list.extend(costs)
         all_perfs_list.extend(perfs)
-        method_results[f'CoRE_{n_heads}heads'] = (costs, perfs)
+        method_results[f'R2-Router_{n_heads}heads'] = (costs, perfs)
 
     # CARROT baselines
     print("\nEvaluating CARROT baselines...")
@@ -225,8 +225,8 @@ def main():
         qnc = compute_qnc(costs, perfs, target_accuracy, global_min_cost, global_max_cost)
         peak_acc = perfs.max()
 
-        # Extract n_heads for CoRE methods
-        if 'CoRE' in method_name:
+        # Extract n_heads for R2-Router methods
+        if 'R2-Router' in method_name:
             n_heads = int(method_name.split('_')[1].replace('heads', ''))
         else:
             n_heads = None
@@ -253,8 +253,8 @@ def main():
 
 def generate_plots(results_df: pd.DataFrame, output_dir: str):
     """Generate comparison plots with AUDC and QNC."""
-    # Separate CoRE and CARROT results
-    core_results = results_df[results_df['method'].str.contains('CoRE')].sort_values('n_heads')
+    # Separate R2-Router and CARROT results
+    r2_results = results_df[results_df['method'].str.contains('R2-Router')].sort_values('n_heads')
     carrot_results = results_df[results_df['method'].str.contains('CARROT')]
 
     # Set style
@@ -265,15 +265,15 @@ def generate_plots(results_df: pd.DataFrame, output_dir: str):
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 6))
 
     # Plot 1: AUDC
-    ax1.plot(core_results['n_heads'], core_results['audc'],
+    ax1.plot(r2_results['n_heads'], r2_results['audc'],
              marker='o', linewidth=2.5, markersize=8,
-             color='#2E86AB', label='CoRE (Interpolation)', zorder=3)
+             color='#2E86AB', label='R2-Router (Interpolation)', zorder=3)
 
-    # CoRE Full (16 heads)
-    core_16 = core_results[core_results['n_heads'] == 16]
+    # R2-Router Full (16 heads)
+    core_16 = r2_results[r2_results['n_heads'] == 16]
     if not core_16.empty:
         ax1.axhline(y=core_16['audc'].values[0], color='red', linestyle='--', linewidth=2,
-                    label=f'CoRE Full (16 heads): {core_16["audc"].values[0]:.4f}', zorder=2)
+                    label=f'R2-Router Full (16 heads): {core_16["audc"].values[0]:.4f}', zorder=2)
 
     # CARROT baselines
     for _, row in carrot_results.iterrows():
@@ -290,17 +290,17 @@ def generate_plots(results_df: pd.DataFrame, output_dir: str):
     ax1.grid(True, alpha=0.3, linestyle='--')
     ax1.set_axisbelow(True)
     ax1.legend(fontsize=10, framealpha=0.95, loc='best')
-    ax1.set_xticks(core_results['n_heads'])
+    ax1.set_xticks(r2_results['n_heads'])
 
     # Plot 2: QNC (lower is better)
-    ax2.plot(core_results['n_heads'], core_results['qnc'],
+    ax2.plot(r2_results['n_heads'], r2_results['qnc'],
              marker='o', linewidth=2.5, markersize=8,
-             color='#2E86AB', label='CoRE (Interpolation)', zorder=3)
+             color='#2E86AB', label='R2-Router (Interpolation)', zorder=3)
 
-    # CoRE Full (16 heads)
+    # R2-Router Full (16 heads)
     if not core_16.empty:
         ax2.axhline(y=core_16['qnc'].values[0], color='red', linestyle='--', linewidth=2,
-                    label=f'CoRE Full (16 heads): {core_16["qnc"].values[0]:.4f}', zorder=2)
+                    label=f'R2-Router Full (16 heads): {core_16["qnc"].values[0]:.4f}', zorder=2)
 
     # CARROT baselines
     for _, row in carrot_results.iterrows():
@@ -317,7 +317,7 @@ def generate_plots(results_df: pd.DataFrame, output_dir: str):
     ax2.grid(True, alpha=0.3, linestyle='--')
     ax2.set_axisbelow(True)
     ax2.legend(fontsize=10, framealpha=0.95, loc='best')
-    ax2.set_xticks(core_results['n_heads'])
+    ax2.set_xticks(r2_results['n_heads'])
 
     plt.tight_layout()
 

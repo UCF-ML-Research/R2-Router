@@ -14,8 +14,8 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from main.shared.dataset_manager import DatasetManager
 from main.shared.router_dataset import RouterDataset
-from main.core.predictor_sklearn import TokenPerformancePredictor
-from main.core.experiment_interpolation import (
+from main.r2.predictor_sklearn import TokenPerformancePredictor
+from main.r2.experiment_interpolation import (
     TOKEN_LIMITS_NAMES,
     TOKEN_LIMITS_NUMERIC,
     interpolate_predictions,

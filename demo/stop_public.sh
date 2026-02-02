@@ -1,5 +1,5 @@
 #!/bin/bash
-# Stop CoRE Router Public Deployment
+# Stop R2-Router Public Deployment
 
 set -e
 
@@ -7,7 +7,7 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m'
 
-echo -e "${YELLOW}🛑 Stopping CoRE Router services...${NC}"
+echo -e "${YELLOW}🛑 Stopping R2-Router services...${NC}"
 
 # Get script directory
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"

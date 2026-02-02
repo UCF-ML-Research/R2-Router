@@ -1,13 +1,13 @@
 # Session Summary - Demo Improvements
 
-This document summarizes all improvements made to the CoRE Router Demo in this session.
+This document summarizes all improvements made to the R2-Router Demo in this session.
 
 ---
 
 ## Change 1: Input Prompt Display with Highlighted Instructions
 
 ### Request
-*"Because for CoRE, we insert an instructional prompt to let LLM generate token number under certain limits, please also add a frame for input of CoRE and CARROT and highlight the instructional prompt"*
+*"Because for R2-Router, we insert an instructional prompt to let LLM generate token number under certain limits, please also add a frame for input of R2-Router and CARROT and highlight the instructional prompt"*
 
 ### Files Modified
 - **`demo/llm_client.py`** (lines 120-165, 233-273)
@@ -33,7 +33,7 @@ This document summarizes all improvements made to the CoRE Router Demo in this s
 
 ### Visual Result
 
-**CoRE with Limited Setting (e.g., 150 words):**
+**R2-Router with Limited Setting (e.g., 150 words):**
 ```
 What is the capital of France?
 
@@ -43,7 +43,7 @@ You must answer in at most 150 words!
 Answer:
 ```
 
-**CoRE with Unlimited / CARROT:**
+**R2-Router with Unlimited / CARROT:**
 ```
 What is the capital of France?
 ```
@@ -133,8 +133,8 @@ Where:
 ## Testing Recommendations
 
 1. **Test input prompt display**:
-   - Run demo with CoRE + limited token setting → should see highlighted instruction
-   - Run demo with CoRE + unlimited → should see plain query
+   - Run demo with R2-Router + limited token setting → should see highlighted instruction
+   - Run demo with R2-Router + unlimited → should see plain query
    - Run demo with CARROT → should see plain query (CARROT always unlimited)
 
 2. **Test actual risk calculation**:
@@ -156,7 +156,7 @@ Where:
 ✅ **Transparency**: Users see exactly what prompt was sent to LLM
 ✅ **Truthfulness**: Trophy awarded based on actual performance, not predictions
 ✅ **Debugging**: Can compare predicted vs actual to assess routing quality
-✅ **Education**: Visual distinction between CoRE's instructional approach and CARROT's unlimited approach
+✅ **Education**: Visual distinction between R2-Router's instructional approach and CARROT's unlimited approach
 ✅ **Research Value**: Ground truth metrics for analysis
 
 ---

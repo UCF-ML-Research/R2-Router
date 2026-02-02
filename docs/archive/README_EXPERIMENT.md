@@ -1,6 +1,6 @@
-# Run Experiment: Complete Pipeline (CoRE + CARROT)
+# Run Experiment: Complete Pipeline (R2-Router + CARROT)
 
-Simple script to define your LLM pool, train CoRE with hyperparameters, train CARROT, and compare them.
+Simple script to define your LLM pool, train R2-Router with hyperparameters, train CARROT, and compare them.
 
 ## Usage
 
@@ -14,7 +14,7 @@ LLM_POOL=(
     "Qwen3-0.6B|0.0173|data/Qwen3-0.6B.csv"
 )
 
-# CoRE Hyperparameters (tune for better precision)
+# R2-Router Hyperparameters (tune for better precision)
 CORE_MODEL_TYPE="ridge"   # Try: "linear", "ridge", "lasso", "random_forest"
 CORE_ALPHA=10.0           # Regularization (try: 1.0, 10.0, 100.0)
 ```
@@ -26,7 +26,7 @@ bash run_experiment.sh
 ```
 
 This will:
-1. **Train CoRE** - Train your predictor models with configured hyperparameters
+1. **Train R2-Router** - Train your predictor models with configured hyperparameters
 2. **Train CARROT** - Train KNN and Linear baselines on the same LLM pool
 3. **Compare** - Generate quality-cost curves comparing both methods
 4. **Save results** to `./comparison_results/`
@@ -35,12 +35,12 @@ This will:
 
 - **Plot**: `./comparison_results/core_vs_carrot_curves.png`
 - **Data**: `./comparison_results/core_vs_carrot_curves.csv`
-- **CoRE plots**: `./plots/{model}_multi/`
+- **R2-Router plots**: `./plots/{model}_multi/`
 - **CARROT plots**: `./plots/carrot_knn/` and `./plots/carrot_linear/`
 
 ## Configuration Options
 
-### CoRE Model Types
+### R2-Router Model Types
 
 Edit `CORE_MODEL_TYPE` to choose the algorithm:
 
@@ -54,7 +54,7 @@ Edit `CORE_MODEL_TYPE` to choose the algorithm:
 | `"gradient_boosting"` | Boosted trees | Maximum accuracy (slower) |
 | `"mlp"` | Neural network | Complex non-linear patterns |
 
-### CoRE Hyperparameters
+### R2-Router Hyperparameters
 
 **For Ridge/Lasso/ElasticNet:**
 ```bash
@@ -157,7 +157,7 @@ The script prints:
 
 ```
 ==========================================
-STEP 1: Training CoRE on 10 models
+STEP 1: Training R2-Router on 10 models
 ==========================================
 Model Type: ridge
 Alpha: 10.0
@@ -175,7 +175,7 @@ STEP 2: Training CARROT on 10 models
 ...
 
 ==========================================
-STEP 3: Comparing CoRE vs CARROT
+STEP 3: Comparing R2-Router vs CARROT
 ==========================================
 ...
 
@@ -183,7 +183,7 @@ STEP 3: Comparing CoRE vs CARROT
 RESULTS
 ==========================================
 
-CoRE (Our Method):
+R2-Router (Our Method):
   AUDC: 0.8456
   Peak Accuracy: 0.8723
 
@@ -191,7 +191,7 @@ CARROT-KNN:
   AUDC: 0.8315
   Peak Accuracy: 0.8767
 
-CoRE vs Best CARROT:
+R2-Router vs Best CARROT:
   AUDC improvement: +1.70%
   Peak accuracy improvement: -0.52%
 
@@ -204,12 +204,12 @@ Results saved to:
   - ./plots/carrot_knn/
   - ./plots/carrot_linear/
 
-CoRE configuration used:
+R2-Router configuration used:
   Model Type: ridge
   Alpha: 10.0
   Training Scheme: ridge_alpha10.0
 
-CoRE checkpoints saved to:
+R2-Router checkpoints saved to:
   - ./checkpoints/GLM-4.5-Air_ridge_alpha10.0/
   - ./checkpoints/GLM-4.6_ridge_alpha10.0/
   - ./checkpoints/gemma-3-4b-it_ridge_alpha10.0/
@@ -220,26 +220,26 @@ CoRE checkpoints saved to:
 
 The script intelligently manages checkpoints to avoid unnecessary retraining:
 
-### CoRE Models (Per-Model Checkpoints)
-Each CoRE model is trained independently and can be loaded if:
+### R2-Router Models (Per-Model Checkpoints)
+Each R2-Router model is trained independently and can be loaded if:
 - Checkpoint directory exists: `./checkpoints/{ModelName}_{TrainingScheme}/`
 - All 3 required files exist:
   - `limited_score_predictors.joblib`
   - `unlimited_score_predictor.joblib`
   - `unlimited_token_predictor.joblib`
 
-**Example:** If you change the model pool (add/remove LLMs) but keep the same training scheme, CoRE models will be loaded for existing LLMs and only new LLMs will be trained.
+**Example:** If you change the model pool (add/remove LLMs) but keep the same training scheme, R2-Router models will be loaded for existing LLMs and only new LLMs will be trained.
 
 ### CARROT Baselines (Pool-Level Checkpoints)
 CARROT models are trained on the **entire model pool**, so they must be retrained when:
 - The model pool changes (any LLM added/removed)
-- The training scheme changes (affects CoRE predictions)
+- The training scheme changes (affects R2-Router predictions)
 
 The script stores a configuration file (`./checkpoints/carrot_config.txt`) that tracks:
 - Current training scheme (e.g., `ridge_alpha10.0`)
 - Current model pool (list of all LLMs)
 
-**Example:** If you change `CORE_ALPHA` from 10.0 to 100.0, all CoRE models will be retrained in new folders (`{model}_ridge_alpha100.0`), and CARROT will automatically retrain to compare against the new CoRE predictions.
+**Example:** If you change `CORE_ALPHA` from 10.0 to 100.0, all R2-Router models will be retrained in new folders (`{model}_ridge_alpha100.0`), and CARROT will automatically retrain to compare against the new R2-Router predictions.
 
 ## Understanding Metrics
 
@@ -286,7 +286,7 @@ CORE_MAX_DEPTH=3
 
 **Before** (manual process):
 1. Manually edit `predictor_sklearn.py` hyperparameters
-2. Run `python predictor_sklearn.py` to train CoRE
+2. Run `python predictor_sklearn.py` to train R2-Router
 3. Run `python baselines_carrot.py` to train CARROT
 4. Run `python compare_core_carrot.py` to compare
 5. Check if results are good, repeat from step 1 if not
@@ -303,12 +303,12 @@ CORE_MAX_DEPTH=3
 | "CSV not found" | Check paths in `LLM_POOL` |
 | Low R² scores | Try `CORE_MODEL_TYPE="ridge"` with `CORE_ALPHA=10.0` |
 | Training too slow | Use `CORE_MODEL_TYPE="ridge"` (fastest) |
-| CoRE worse than CARROT | Try `CORE_MODEL_TYPE="gradient_boosting"` |
+| R2-Router worse than CARROT | Try `CORE_MODEL_TYPE="gradient_boosting"` |
 
 ## Files
 
 - **[run_experiment.sh](run_experiment.sh)** - Main script (configure here)
-- **[train_core.py](train_core.py)** - CoRE training (don't edit)
+- **[train_r2.py](train_r2.py)** - R2-Router training (don't edit)
 - **[train_carrot.py](train_carrot.py)** - CARROT training (don't edit)
 - **[compare_methods.py](compare_methods.py)** - Comparison (don't edit)
 
@@ -319,8 +319,8 @@ Only edit `run_experiment.sh` - it controls everything!
 If you want to train models separately:
 
 ```bash
-# Train only CoRE
-python train_core.py --model_type ridge --alpha 10.0 \
+# Train only R2-Router
+python train_r2.py --model_type ridge --alpha 10.0 \
     --model GLM-4.5-Air 0.85 data/GLM-4.5-Air.csv ./checkpoints/GLM-4.5-Air_multi
 
 # Train only CARROT

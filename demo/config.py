@@ -1,5 +1,5 @@
 """
-Configuration for CoRE Router Demo
+Configuration for R2-Router Demo
 """
 
 import os
@@ -152,10 +152,10 @@ JUDGE_TIMEOUT = 20
 # Default values for UI
 DEFAULT_LAMBDA = 0.5
 DEFAULT_BUDGET = None  # None = unlimited
-DEFAULT_METHODS = ["CoRE", "CARROT"]  # Default selected methods
+DEFAULT_METHODS = ["R2-Router", "CARROT"]  # Default selected methods
 
 # Available methods
-AVAILABLE_METHODS = ["CoRE", "CARROT"]
+AVAILABLE_METHODS = ["R2-Router", "CARROT"]
 
 # UI theme
 GRADIO_THEME = "default"  # "default", "soft", "glass", etc.
@@ -210,15 +210,15 @@ def validate_config():
     if not CHECKPOINTS_DIR.exists():
         errors.append(f"Checkpoints directory not found: {CHECKPOINTS_DIR}")
 
-    # Check CoRE checkpoints contain CARROT predictors
+    # Check R2-Router checkpoints contain CARROT predictors
     # Note: CARROT now uses unlimited predictors from each LLM's checkpoint
     # No separate CARROT checkpoint needed
 
-    # Check CoRE checkpoints for each LLM
+    # Check R2-Router checkpoints for each LLM
     for llm_name, llm_config in LLM_POOL.items():
         checkpoint = llm_config["checkpoint"]
         if not checkpoint.exists():
-            errors.append(f"CoRE checkpoint for {llm_name} not found: {checkpoint}")
+            errors.append(f"R2-Router checkpoint for {llm_name} not found: {checkpoint}")
 
     if errors:
         print("⚠️  Configuration Warnings:")

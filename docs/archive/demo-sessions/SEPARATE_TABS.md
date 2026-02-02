@@ -4,7 +4,7 @@
 
 Restructured the UI into two separate tabs with distinct workflows:
 1. **Direct Route**: Algorithmic routing with lambda parameter
-2. **Visualized Route**: Manual selection from cost-quality plots with separate controls for CoRE and CARROT-KNN
+2. **Visualized Route**: Manual selection from cost-quality plots with separate controls for R2-Router and CARROT-KNN
 
 ## Key Changes
 
@@ -34,40 +34,40 @@ with gr.Tabs():
 
 ---
 
-### 2. Separate Selection for CoRE and CARROT
+### 2. Separate Selection for R2-Router and CARROT
 
 **Problem Solved:** Previously had one LLM dropdown and one token limit dropdown, which was confusing because:
-- CoRE needs: LLM + Token Limit
+- R2-Router needs: LLM + Token Limit
 - CARROT needs: LLM only (always unlimited)
 - User might pick different LLMs for each method
 
 **Solution:** Two independent selection columns
 
-#### CoRE Selection (Left Column)
+#### R2-Router Selection (Left Column)
 
 **Lines 742-756:**
 ```python
 with gr.Column():
-    gr.Markdown("### 🎯 CoRE Selection")
+    gr.Markdown("### 🎯 R2-Router Selection")
     gr.Markdown("Select LLM and token limit from the curves above")
 
-    core_llm_dropdown = gr.Dropdown(
-        label="CoRE: Choose LLM",
+    r2_llm_dropdown = gr.Dropdown(
+        label="R2-Router: Choose LLM",
         choices=list(config.LLM_POOL.keys()),
         value=None
     )
 
-    core_token_dropdown = gr.Dropdown(
-        label="CoRE: Choose Token Limit",
+    r2_token_dropdown = gr.Dropdown(
+        label="R2-Router: Choose Token Limit",
         choices=["10", "20", ..., "unlimited"],
         value="unlimited"
     )
 
-    run_core_btn = gr.Button("▶️ Run CoRE with Selection")
+    run_core_btn = gr.Button("▶️ Run R2-Router with Selection")
 ```
 
 **Features:**
-- Independent LLM selection for CoRE
+- Independent LLM selection for R2-Router
 - Full token limit selection (16 options)
 - Dedicated run button
 - Clear labeling
@@ -101,11 +101,11 @@ with gr.Column():
 
 ### 3. Separate Run Functions
 
-**CoRE Run Button** (lines 801-805):
+**R2-Router Run Button** (lines 801-805):
 ```python
 run_core_btn.click(
     fn=run_single_inference,
-    inputs=[query_input, core_llm_dropdown, core_token_dropdown],
+    inputs=[query_input, r2_llm_dropdown, r2_token_dropdown],
     outputs=visualized_results
 )
 ```
@@ -139,7 +139,7 @@ run_carrot_btn.click(
 │                                                  │
 │  Lambda (λ): [Slider 0.0 to 1.0]                │
 │                                                  │
-│  [✓] CoRE    [✓] CARROT-KNN                     │
+│  [✓] R2-Router    [✓] CARROT-KNN                     │
 │                                                  │
 │  [🚀 Route Query]                                │
 │                                                  │
@@ -154,14 +154,14 @@ run_carrot_btn.click(
 │  [📊 Show Visualizations]                        │
 │                                                  │
 │  ┌──────────────────────────────────────────┐   │
-│  │ CoRE Plot [50%]  │  CARROT Plot [50%]   │   │
+│  │ R2-Router Plot [50%]  │  CARROT Plot [50%]   │   │
 │  └──────────────────────────────────────────┘   │
 │                                                  │
 │  ┌───────────────────┬────────────────────────┐ │
-│  │ 🎯 CoRE Selection │ 🥕 CARROT-KNN Selection│ │
+│  │ 🎯 R2-Router Selection │ 🥕 CARROT-KNN Selection│ │
 │  │ LLM: [Dropdown▼] │ LLM: [Dropdown▼]      │ │
 │  │ Token: [Dropdown▼]│ Token: unlimited (fixed)│ │
-│  │ [▶️ Run CoRE]    │ [▶️ Run CARROT]       │ │
+│  │ [▶️ Run R2-Router]    │ [▶️ Run CARROT]       │ │
 │  └───────────────────┴────────────────────────┘ │
 │                                                  │
 │  Visualized Route Results:                      │
@@ -179,25 +179,25 @@ run_carrot_btn.click(
 1. Enter query
 2. Go to "Direct Route" tab
 3. Set lambda value
-4. Select methods (CoRE, CARROT, or both)
+4. Select methods (R2-Router, CARROT, or both)
 5. Click "Route Query"
 6. System automatically selects best LLM and token limit
 7. Results shown with comparison table
 ```
 
-### Workflow 2: Visualized Route - CoRE
+### Workflow 2: Visualized Route - R2-Router
 
 ```
 1. Enter query
 2. Go to "Visualized Route" tab
 3. Click "Show Visualizations"
-4. View CoRE curves (left plot)
+4. View R2-Router curves (left plot)
 5. Hover to see details
 6. Choose based on cost-quality tradeoff
-7. Select LLM from CoRE dropdown
-8. Select token limit from CoRE dropdown
-9. Click "Run CoRE with Selection"
-10. Results shown with CoRE metrics
+7. Select LLM from R2-Router dropdown
+8. Select token limit from R2-Router dropdown
+9. Click "Run R2-Router with Selection"
+10. Results shown with R2-Router metrics
 ```
 
 ### Workflow 3: Visualized Route - CARROT
@@ -228,9 +228,9 @@ run_carrot_btn.click(
 
 ### Separate Selections
 
-✅ **Independent choices**: Can pick different LLMs for CoRE vs CARROT
-✅ **Clear labeling**: Explicit "CoRE" vs "CARROT" prefixes
-✅ **Correct options**: Token limit only for CoRE
+✅ **Independent choices**: Can pick different LLMs for R2-Router vs CARROT
+✅ **Clear labeling**: Explicit "R2-Router" vs "CARROT" prefixes
+✅ **Correct options**: Token limit only for R2-Router
 ✅ **No ambiguity**: Each selection is clearly for one method
 
 ### User Experience
@@ -248,7 +248,7 @@ run_carrot_btn.click(
 
 ```
 ❌ Two modes side-by-side (cramped)
-❌ One LLM dropdown (shared between CoRE and CARROT)
+❌ One LLM dropdown (shared between R2-Router and CARROT)
 ❌ One token limit dropdown (confusing for CARROT users)
 ❌ Unclear which selection is for which method
 ❌ Results mixed together
@@ -258,9 +258,9 @@ run_carrot_btn.click(
 
 ```
 ✅ Two tabs (clear separation)
-✅ CoRE has its own LLM dropdown
+✅ R2-Router has its own LLM dropdown
 ✅ CARROT has its own LLM dropdown
-✅ Token limit only for CoRE (no confusion)
+✅ Token limit only for R2-Router (no confusion)
 ✅ Results shown in respective tabs
 ```
 
@@ -274,9 +274,9 @@ run_carrot_btn.click(
 
 1. Tab: "Direct Route"
 2. Lambda: 0.3
-3. Methods: Both CoRE and CARROT
+3. Methods: Both R2-Router and CARROT
 4. Click "Route Query"
-5. See comparison: CoRE picks Qwen3-235B @ 150, CARROT picks Llama3-70B @ unlimited
+5. See comparison: R2-Router picks Qwen3-235B @ 150, CARROT picks Llama3-70B @ unlimited
 
 ### Visualized Route Example
 
@@ -284,9 +284,9 @@ run_carrot_btn.click(
 
 1. Tab: "Visualized Route"
 2. Click "Show Visualizations"
-3. **For CoRE**: Sees Qwen3-235B @ 200 has quality 0.87, cost 110
+3. **For R2-Router**: Sees Qwen3-235B @ 200 has quality 0.87, cost 110
    - Select: Qwen3-235B, Token: 200
-   - Click "Run CoRE"
+   - Click "Run R2-Router"
 4. **For CARROT**: Sees gemma-3-4b has quality 0.75, cost 45 (cheap!)
    - Select: gemma-3-4b
    - Click "Run CARROT"

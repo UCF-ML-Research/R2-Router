@@ -1,4 +1,4 @@
-"""Train CoRE (sklearn-based) predictors on specified LLM pool."""
+"""Train R2-Router (sklearn-based) predictors on specified LLM pool."""
 
 import argparse
 import os
@@ -10,7 +10,7 @@ from .predictor import TokenPerformancePredictor as TorchPredictor
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description='Train CoRE predictors')
+    parser = argparse.ArgumentParser(description='Train R2-Router predictors')
     parser.add_argument('--model', action='append', nargs=4,
                         metavar=('NAME', 'SIZE', 'CSV', 'CHECKPOINT'),
                         help='Model configuration: name size csv_path checkpoint_path (checkpoint auto-generated)')
@@ -95,7 +95,7 @@ def main():
     train_idx, test_idx = dataset_manager.get_split_indices()
 
     print("=" * 80)
-    print(f"TRAINING CoRE WITH MODEL TYPE: {args.model_type}")
+    print(f"TRAINING R2-Router WITH MODEL TYPE: {args.model_type}")
     print(f"Training Scheme: {scheme_suffix}")
     if args.model_type in ["ridge", "lasso", "elasticnet"]:
         print(f"  Alpha: {args.alpha}")
@@ -212,7 +212,7 @@ def main():
             print(f"   - Token count shape: {token_count.shape}")
 
     print("\n" + "=" * 80)
-    print("All CoRE models trained successfully!")
+    print("All R2-Router models trained successfully!")
     print("=" * 80)
 
 

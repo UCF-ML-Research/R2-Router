@@ -1,14 +1,14 @@
 """
-Uni-CoRE: Universal Cost-aware Routing for Efficient LLM Inference
+Uni-R2: Universal Cost-aware Routing for Efficient LLM Inference
 
 Combines:
-- CoRE: Multiple token budgets per model
+- R2-Router: Multiple token budgets per model
 - UniRouter: Dynamic model pool (add new LLMs without retraining)
 
 Key idea: Represent each LLM as a feature matrix Ψ(h) ∈ R^(K×B)
 where K = number of validation samples (or clusters), B = number of token budgets
 
-Author: Implementation based on Uni-CoRE specification
+Author: Implementation based on Uni-R2 specification
 """
 
 import numpy as np
@@ -182,7 +182,7 @@ class ModelFeatureMatrix:
             model_name: Name of the model
             features: Feature matrix Ψ(h) ∈ R^(K×B)
             size: Model size in billions of parameters
-            per_token_cost: Cost per token (default: size, following CoRE cost model)
+            per_token_cost: Cost per token (default: size, following R2-Router cost model)
         """
         if features.shape != (self.K, self.B):
             raise ValueError(f"Features shape {features.shape} != ({self.K}, {self.B})")
@@ -190,7 +190,7 @@ class ModelFeatureMatrix:
         self.features[model_name] = features
         self.model_sizes[model_name] = size
 
-        # Cost model: cost = actual_tokens × model_size (following CoRE)
+        # Cost model: cost = actual_tokens × model_size (following R2-Router)
         if per_token_cost is None:
             per_token_cost = size  # Use model size directly
 
@@ -239,9 +239,9 @@ class ModelFeatureMatrix:
         return matrix
 
 
-class UniCoreRouter:
+class UniR2Router:
     """
-    Uni-CoRE router: Routes queries to (model, budget) pairs.
+    Uni-R2 router: Routes queries to (model, budget) pairs.
 
     Routing score: Φ(x)^T · Ψ(h, budget_b) - λ · cost(h, budget_b)
     """
@@ -349,7 +349,7 @@ class UniCoreRouter:
                         # Budget limits are usually close to actual usage
                         estimated_tokens = budget
 
-                    # Cost: estimated_tokens × model_size (CoRE cost model)
+                    # Cost: estimated_tokens × model_size (R2-Router cost model)
                     # per_token_cost is actually model_size in our implementation
                     cost = per_token_cost * estimated_tokens
 

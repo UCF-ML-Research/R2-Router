@@ -11,7 +11,7 @@ demo_dir = Path(__file__).parent.absolute()
 sys.path.insert(0, str(demo_dir))
 
 print("="*60)
-print("Testing CoRE Router Demo (Mock Mode)")
+print("Testing R2-Router Demo (Mock Mode)")
 print("="*60)
 print()
 
@@ -36,13 +36,13 @@ print()
 
 # Test 3: Routers
 print("3. Testing routers...")
-from router import get_core_router
+from router import get_r2_router
 from baselines import get_carrot_router
 
-# CoRE
-core_router = get_core_router()
-core_router.load_models()
-print(f"   ✓ CoRE router loaded")
+# R2-Router
+r2_router = get_r2_router()
+r2_router.load_models()
+print(f"   ✓ R2-Router loaded")
 
 # CARROT-KNN
 knn_router = get_carrot_router("knn")
@@ -59,9 +59,9 @@ print()
 print("4. Testing routing (lambda=0.5)...")
 lambda_val = 0.5
 
-core_result = core_router.route(embedding, lambda_val=lambda_val)
-print(f"   CoRE: {core_result['llm_name']} @ {core_result['token_limit']} tokens")
-print(f"         score={core_result['predicted_score']:.3f}, cost={core_result['predicted_cost']:.1f}")
+r2_result = r2_router.route(embedding, lambda_val=lambda_val)
+print(f"   R2-Router: {r2_result['llm_name']} @ {r2_result['token_limit']} tokens")
+print(f"         score={r2_result['predicted_score']:.3f}, cost={r2_result['predicted_cost']:.1f}")
 
 knn_result = knn_router.route(embedding, lambda_val=lambda_val)
 print(f"   KNN:  {knn_result['llm_name']} @ {knn_result['token_limit']} tokens")
@@ -78,8 +78,8 @@ from llm_client import get_llm_client
 
 client = get_llm_client()
 
-llm_name = core_result['llm_name']
-token_limit = core_result['token_limit']
+llm_name = r2_result['llm_name']
+token_limit = r2_result['token_limit']
 
 response, actual_tokens = client.call_llm_by_name(llm_name, query, token_limit)
 print(f"   ✓ LLM response: {response[:50]}...")
@@ -102,7 +102,7 @@ print(f"   Query: {query}")
 print(f"   Lambda: {lambda_val}")
 print()
 
-for method_name, router in [("CoRE", core_router), ("CARROT-KNN", knn_router)]:
+for method_name, router in [("R2-Router", r2_router), ("CARROT-KNN", knn_router)]:
     print(f"   === {method_name} ===")
 
     # Route

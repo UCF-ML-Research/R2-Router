@@ -73,7 +73,7 @@ is_winner = result["predicted_risk"] == best_predicted_risk
 **Comparison Table:**
 | Method | Selected LLM | Token Limit | Actual Score | Actual Cost | Risk Value |
 |--------|-------------|-------------|--------------|-------------|------------|
-| CoRE 🏆 | Qwen3-235B | 150 | 0.85 | 95.2 | **0.542** ← Predicted Risk |
+| R2-Router 🏆 | Qwen3-235B | 150 | 0.85 | 95.2 | **0.542** ← Predicted Risk |
 | CARROT-KNN | Llama3-70B | unlimited | 0.90 | 150.0 | **0.480** ← Predicted Risk |
 
 **Detailed Card Metrics:**
@@ -112,7 +112,7 @@ The method with highest predicted risk made the **best routing decision** becaus
 
 **Example:**
 ```
-CoRE predicts: score=0.9, cost=100 → predicted_risk = 0.60
+R2-Router predicts: score=0.9, cost=100 → predicted_risk = 0.60
 Actual result: score=0.8, cost=95  → actual_risk = 0.52
 
 CARROT predicts: score=0.7, cost=80 → predicted_risk = 0.46
@@ -120,7 +120,7 @@ Actual result: score=0.9, cost=75  → actual_risk = 0.67
 ```
 
 With predicted risk winner:
-- **CoRE wins 🏆** - Made better routing decision (0.60 > 0.46)
+- **R2-Router wins 🏆** - Made better routing decision (0.60 > 0.46)
 - Even though CARROT got lucky with actual performance
 
 With actual risk winner:

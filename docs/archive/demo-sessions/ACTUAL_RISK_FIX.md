@@ -92,7 +92,7 @@ Where:
 
 ### Before (Predicted Risk)
 - Trophy could go to a method that made a good **prediction** but poor **execution**
-- Example: CoRE predicts score=0.9, but actual score=0.6 → predicted risk is high, but actual performance is poor
+- Example: R2-Router predicts score=0.9, but actual score=0.6 → predicted risk is high, but actual performance is poor
 
 ### After (Actual Risk)
 - Trophy goes to method with best **real-world performance**
@@ -112,7 +112,7 @@ Given λ = 0.3:
 
 | Method | Actual Score | Actual Cost | Actual Risk | Winner? |
 |--------|-------------|-------------|-------------|---------|
-| CoRE | 0.8 | 100 | (1-0.3)×0.8 - 0.3×100 = 0.56 - 30 = **-29.44** | ❌ |
+| R2-Router | 0.8 | 100 | (1-0.3)×0.8 - 0.3×100 = 0.56 - 30 = **-29.44** | ❌ |
 | CARROT-KNN | 0.9 | 80 | (1-0.3)×0.9 - 0.3×80 = 0.63 - 24 = **-23.37** | 🏆 |
 
 CARROT-KNN wins because it achieved higher quality (0.9 vs 0.8) at lower cost (80 vs 100), resulting in higher actual risk!

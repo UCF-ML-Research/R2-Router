@@ -2,7 +2,7 @@
 
 ## What Was Added
 
-Interactive click handlers for plot selection. Users can click on any point in CoRE curves or CARROT points to run inference with that option.
+Interactive click handlers for plot selection. Users can click on any point in R2-Router curves or CARROT points to run inference with that option.
 
 ## Changes Made
 
@@ -28,7 +28,7 @@ Interactive click handlers for plot selection. Users can click on any point in C
 ```
 1. Enter query
 2. Click "Show Visualizations"
-3. See plots (CoRE curves + CARROT points)
+3. See plots (R2-Router curves + CARROT points)
 4. Click on any data point
 5. System runs inference with that option
 6. Results appear below
@@ -53,7 +53,7 @@ Display results (HTML)
 
 ## Example
 
-**Click on**: Qwen3-235B @ 150 tokens (on CoRE curve)
+**Click on**: Qwen3-235B @ 150 tokens (on R2-Router curve)
 
 **System does:**
 ```
@@ -68,7 +68,7 @@ Display results (HTML)
 ```
 
 **Shows:**
-- Method: CoRE
+- Method: R2-Router
 - LLM: Qwen3-235B @ 150
 - Predictions vs actuals
 - Input prompt (highlighted)

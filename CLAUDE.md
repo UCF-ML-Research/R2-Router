@@ -6,8 +6,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **The codebase has been reorganized into logical packages:**
 - All main result generation code is in `main/` package
-- Organized into subpackages: `core/`, `baselines/`, `shared/`, `evaluation/`
-- Use Python module syntax: `python -m main.core.train_core`
+- Organized into subpackages: `r2/`, `baselines/`, `shared/`, `evaluation/`
+- Use Python module syntax: `python -m main.r2.train_r2`
 - See `REORGANIZATION_V2_SUMMARY.md` for full details
 
 ## Quick Start
@@ -25,18 +25,18 @@ cd demo && python app.py  # Launch Gradio web interface
 
 **For training new predictors:**
 ```bash
-python -m main.core.train_core --model_type sklearn  # Fast sklearn-based training
+python -m main.r2.train_r2 --model_type sklearn  # Fast sklearn-based training
 # OR
-python -m main.core.train_core --model_type torch_mlp  # Better accuracy with PyTorch
+python -m main.r2.train_r2 --model_type torch_mlp  # Better accuracy with PyTorch
 ```
 
 ## Project Overview
 
-This is a research project for **LLM routing** - intelligently selecting which LLM and token limit to use for each query to optimize the tradeoff between performance (accuracy) and cost (model size × tokens used). The system, called **CoRE (Constrained Response Evaluator)**, predicts performance scores for different (LLM, token_limit) combinations and selects the best option based on a risk function that balances accuracy and cost.
+This is a research project for **LLM routing** - intelligently selecting which LLM and token limit to use for each query to optimize the tradeoff between performance (accuracy) and cost (model size × tokens used). The system, called **R2-Router**, predicts performance scores for different (LLM, token_limit) combinations and selects the best option based on a risk function that balances accuracy and cost.
 
-### Dataset: CoRD (Constrained Response Dataset)
+### Dataset: R2-Bench
 
-The evaluation uses **CoRD**, an extension of the SPROUT benchmark containing **30,968 queries** across **20 categories** from 6 diverse benchmarks:
+The evaluation uses **R2-Bench**, an extension of the SPROUT benchmark containing **30,968 queries** across **20 categories** from 6 diverse benchmarks:
 - TIGER-Lab/MMLU-Pro (8,264 queries) - Professional-level questions
 - openhermes/teknium (13,670 queries) - General knowledge
 - lighteval/MATH/all (5,122 queries) - Math problems
@@ -80,7 +80,7 @@ The codebase is organized into the `main/` package with logical subpackages:
   - Plotting functions for confusion matrices and performance visualization
   - Data loading and preprocessing utilities
 
-**main/core/** - CoRE predictor implementations
+**main/r2/** - R2-Router predictor implementations
 - **predictor.py**: PyTorch-based neural network predictor
   - `TokenPerformancePredictor`: Trains per-token-limit MLPs to predict performance scores
   - Architecture: Input → [256, 128, 64] → 1 (with ReLU + Dropout 0.5)
@@ -95,7 +95,7 @@ The codebase is organized into the `main/` package with logical subpackages:
   - Same interface as predictor.py for easy swapping
   - Saves models as `.joblib` files instead of `.pt` files
 
-- **train_core.py**: Training script for CoRE predictors
+- **train_r2.py**: Training script for R2-Router predictors
   - Unified training script supporting both PyTorch and sklearn predictors
   - Command-line interface for model configuration
 
@@ -118,7 +118,7 @@ The codebase is organized into the `main/` package with logical subpackages:
 
 **main/evaluation/** - Evaluation scripts
 - **compare_methods.py**: Method comparison script
-  - Compares CoRE vs CARROT vs IRT baselines
+  - Compares R2-Router vs CARROT vs IRT baselines
   - Generates comparison plots and metrics
 
 - **results.py**: Main IID evaluation script
@@ -131,7 +131,7 @@ The codebase is organized into the `main/` package with logical subpackages:
 
 **main/run_experiment.sh** - Main experiment pipeline
 - Complete automated pipeline for training and evaluation
-- Handles CoRE, CARROT, and IRT training
+- Handles R2-Router, CARROT, and IRT training
 - Runs comprehensive evaluation and comparison
 
 ## Common Commands
@@ -141,12 +141,12 @@ The codebase is organized into the `main/` package with logical subpackages:
 **Using the unified training script (recommended):**
 ```bash
 # PyTorch-based (Neural Networks - better accuracy)
-python -m main.core.train_core \
+python -m main.r2.train_r2 \
     --model_type torch_mlp \
     --model "Model-Name" "0.85" "data/Model-Name.csv" "checkpoints/Model-Name_1e4"
 
 # Sklearn-based (Linear Regression - faster)
-python -m main.core.train_core \
+python -m main.r2.train_r2 \
     --model_type sklearn \
     --model "Model-Name" "0.85" "data/Model-Name.csv" "checkpoints/Model-Name_multi"
 
@@ -172,7 +172,7 @@ bash main/run_experiment.sh
 python -c "
 from main.shared.dataset_manager import DatasetManager
 from main.shared.llm_loader import load_llm
-from main.core.predictor_sklearn import TokenPerformancePredictor
+from main.r2.predictor_sklearn import TokenPerformancePredictor
 from main.baselines.carrot.baselines_carrot import CarrotKNNBaseline, CarrotLinearBaseline
 
 # Load LLM data (example with 2 models)
@@ -262,14 +262,14 @@ python -m main.evaluation.compare_methods \
 # 3. Compute routing performance curves across λ values
 # 4. Compare against baselines (CARROT-KNN, CARROT-Linear, MIRT, NIRT)
 # 5. Generate plots and save results to ./comparison_results/:
-#    - core_vs_baselines_curves.csv: Cost-performance curves for all methods
-#    - core_vs_baselines_metrics.csv: AUDC, Peak Accuracy, QNC metrics
+#    - r2_vs_baselines_curves.csv: Cost-performance curves for all methods
+#    - r2_vs_baselines_metrics.csv: AUDC, Peak Accuracy, QNC metrics
 
 # To switch between PyTorch and sklearn predictors:
 # Edit main/evaluation/results.py or main/evaluation/compare_methods.py
 # and change the import:
-#   - from ..core.predictor import TokenPerformancePredictor (PyTorch)
-#   - from ..core.predictor_sklearn import TokenPerformancePredictor (sklearn)
+#   - from ..r2.predictor import TokenPerformancePredictor (PyTorch)
+#   - from ..r2.predictor_sklearn import TokenPerformancePredictor (sklearn)
 ```
 
 **OOD (Out-of-Distribution) Evaluation:**
@@ -297,13 +297,13 @@ bash ood_evaluation/run_ood_experiment.sh --category "rungalileo/ragbench/finqa"
 
 **UniRouter Evaluation:**
 ```bash
-# Run UniRouter vs Uni-CoRE comparison (complete pipeline)
+# Run UniRouter vs Uni-R2 comparison (complete pipeline)
 bash unirouter/run_unirouter_experiment.sh
 
 # This will:
 # 1. Create validation set (500 queries by default)
 # 2. Train Original UniRouter (unlimited tokens only)
-# 3. Train Uni-CoRE (multiple token budgets: 10-4000 + unlimited)
+# 3. Train Uni-R2 (multiple token budgets: 10-4000 + unlimited)
 # 4. Evaluate initial model pool
 # 5. Dynamically add new models WITHOUT retraining
 # 6. Compare routing performance across methods
@@ -316,13 +316,13 @@ bash unirouter/run_unirouter_experiment.sh
 
 # Checkpoints saved to ./checkpoints/unirouter/
 # - original_unirouter.pkl: Original UniRouter model
-# - unicore_feature_matrix.pkl: Uni-CoRE feature matrix
+# - uni_r2_feature_matrix.pkl: Uni-R2 feature matrix
 # - validation_set.pkl: Validation set indices
 # - config.txt: Experiment configuration
 
-# Key difference from CoRE:
+# Key difference from R2-Router:
 # - Original UniRouter: Routes to best LLM (always unlimited tokens)
-# - Uni-CoRE: Routes to best (LLM, token_budget) pair
+# - Uni-R2: Routes to best (LLM, token_budget) pair
 # - Both support dynamic model addition without retraining
 ```
 
@@ -336,7 +336,7 @@ python check_data.py
 
 **Method Comparison:**
 ```bash
-# Compare different routing methods (CoRE vs CARROT vs IRT baselines)
+# Compare different routing methods (R2-Router vs CARROT vs IRT baselines)
 python -m main.evaluation.compare_methods \
     --lambda-dist "0,1,100" \
     --model "Model-Name" "0.85" "data/Model-Name.csv" "checkpoints/Model-Name_multi"
@@ -345,8 +345,8 @@ python -m main.evaluation.compare_methods \
 
 **Individual Training Scripts:**
 ```bash
-# Train CoRE predictors
-python -m main.core.train_core --model_type sklearn --model ...
+# Train R2-Router predictors
+python -m main.r2.train_r2 --model_type sklearn --model ...
 
 # Train CARROT baselines
 python -m main.baselines.carrot.train_carrot --model ...
@@ -393,7 +393,7 @@ The project uses a unified checkpoint structure under `checkpoints/` with subdir
 
 - `checkpoints/main/`: **IID checkpoints** trained on ALL 30,968 queries (80/20 random split)
   - Used for IID evaluation and interactive demo
-  - Contains CoRE predictors, CARROT baselines, and IRT baselines
+  - Contains R2-Router predictors, CARROT baselines, and IRT baselines
 
 - `checkpoints/ood_evaluation/{category}/`: **OOD checkpoints** trained on 19 categories only
   - One subdirectory per held-out category (e.g., `checkpoints/ood_evaluation/rungalileo_ragbench_finqa/`)
@@ -401,7 +401,7 @@ The project uses a unified checkpoint structure under `checkpoints/` with subdir
   - Each category has its own trained predictors and baselines
 
 - `checkpoints/unirouter/`: **UniRouter checkpoints** for dynamic model addition experiments
-  - Contains Original UniRouter and Uni-CoRE feature matrices
+  - Contains Original UniRouter and Uni-R2 feature matrices
   - Validation set indices for consistent comparison
 
 This separation ensures proper evaluation:
@@ -414,10 +414,10 @@ This separation ensures proper evaluation:
 Unified results directory for all evaluation types:
 
 **`comparison_results/main/`**: IID evaluation results
-- `core_vs_baselines_metrics.csv`: Peak accuracy, AUDC, QNC for each method
-- `core_vs_baselines_curves.csv`: Full cost-performance curves
-- `core_vs_baselines_curves_actual.png`: Plot with actual costs
-- `core_vs_baselines_curves_normalized.png`: Plot with normalized costs
+- `r2_vs_baselines_metrics.csv`: Peak accuracy, AUDC, QNC for each method
+- `r2_vs_baselines_curves.csv`: Full cost-performance curves
+- `r2_vs_baselines_curves_actual.png`: Plot with actual costs
+- `r2_vs_baselines_curves_normalized.png`: Plot with normalized costs
 
 **`comparison_results/ood_evaluation/{category}/`**: OOD evaluation results per category
 - `{category}_metrics.csv`: Peak accuracy, AUDC, QNC for each method
@@ -425,7 +425,7 @@ Unified results directory for all evaluation types:
 - `{category}_plot.png`: Visual comparison
 - `config.txt`: Experiment configuration (LLM pool, hyperparameters, QNC settings)
 
-**`comparison_results/unirouter/`**: UniRouter vs Uni-CoRE comparison results
+**`comparison_results/unirouter/`**: UniRouter vs Uni-R2 comparison results
 - `comparison_metrics.csv`: Peak accuracy, AUDC, QNC for each method
 - `comparison_curves.csv`: Full cost-performance curves
 - `comparison_plot_actual.png`: Plot with actual costs
@@ -443,8 +443,8 @@ Unified results directory for all evaluation types:
 
 ### UniRouter Files (`unirouter/`)
 - `run_unirouter_experiment.sh`: Automated pipeline for UniRouter comparison
-- `eval_compare.py`: Evaluation script comparing Original UniRouter vs Uni-CoRE
-- `uni_core.py`: Uni-CoRE implementation (feature matrix and routing)
+- `eval_compare.py`: Evaluation script comparing Original UniRouter vs Uni-R2
+- `uni_r2.py`: Uni-R2 implementation (feature matrix and routing)
 - `unirouter_original.py`: Original UniRouter implementation
 
 ### Visualization (`plots/`)
@@ -639,7 +639,7 @@ The `llm_loader.py` automatically handles both predictor types through the `pred
 
 ### Alternative Training Scripts
 The codebase includes alternative training interfaces:
-- `train_core.py`: Alternative to `predictor.py` with different configuration options
+- `train_r2.py`: Alternative to `predictor.py` with different configuration options
 - `train_carrot.py`: Standalone script for training CARROT baselines
 
 These scripts provide the same functionality as the main training scripts but may have different hyperparameter defaults or output formats. Use whichever interface you prefer.
@@ -661,8 +661,8 @@ ls plots/              # Visualization outputs
 
 **For manual training and evaluation:**
 ```bash
-# 1. Train CoRE predictors for specific models
-python -m main.core.train_core \
+# 1. Train R2-Router predictors for specific models
+python -m main.r2.train_r2 \
     --model_type sklearn \
     --model "Model-Name" "0.85" "data/Model.csv" "checkpoints/Model_multi"
 
@@ -695,7 +695,7 @@ ls ood_evaluation/results/  # Metrics, curves, plots per category
 
 **Location**: `demo/` directory
 
-A Gradio-based web interface for testing CoRE routing in real-time:
+A Gradio-based web interface for testing R2-Router routing in real-time:
 
 ### Running the Demo
 ```bash
@@ -712,7 +712,7 @@ python app.py
 ### Demo Architecture
 - **app.py**: Main Gradio interface with tabs for routing results and visualizations
 - **config.py**: Configuration for LLM pool, API settings, checkpoints, and feature flags
-- **router.py**: CoRE routing logic (loads sklearn predictors from checkpoints)
+- **router.py**: R2-Router routing logic (loads sklearn predictors from checkpoints)
 - **baselines.py**: CARROT-KNN and CARROT-Linear baseline routers
 - **embedder.py**: Query embedding using vLLM or sentence-transformers
 - **llm_client.py**: OpenRouter API client for LLM inference with token budgets
@@ -720,8 +720,8 @@ python app.py
 - **visualizer.py**: Plotly visualizations for cost-quality tradeoffs
 
 ### Demo Features
-1. **Real-time Routing**: Enter a query and see CoRE select optimal (LLM, token_limit)
-2. **Baseline Comparison**: Compare CoRE vs CARROT-KNN vs CARROT-Linear side-by-side
+1. **Real-time Routing**: Enter a query and see R2-Router select optimal (LLM, token_limit)
+2. **Baseline Comparison**: Compare R2-Router vs CARROT-KNN vs CARROT-Linear side-by-side
 3. **Visualizations**: Interactive Plotly plots showing predicted cost-quality curves
 4. **Input Transparency**: View exact prompts sent to each LLM (with token budget instructions)
 5. **Automated Evaluation**: Judge LLM scores response quality (0-1 scale)
@@ -782,10 +782,10 @@ python check_data.py  # Validates data structure
 **Main result package structure:**
 ```
 main/
-├── core/                    # CoRE predictor implementations
+├── r2/                    # R2-Router predictor implementations
 │   ├── predictor.py         # PyTorch neural network
 │   ├── predictor_sklearn.py # Sklearn linear regression
-│   └── train_core.py        # Training script
+│   └── train_r2.py        # Training script
 ├── baselines/               # Baseline methods
 │   ├── carrot/             # CARROT baselines
 │   │   ├── baselines_carrot.py
@@ -808,13 +808,13 @@ main/
 - `ood_evaluation/ood_dataset_manager.py` → Category-based splits
 
 **UniRouter comparison:**
-- `unirouter/run_unirouter_experiment.sh` → UniRouter vs Uni-CoRE comparison
+- `unirouter/run_unirouter_experiment.sh` → UniRouter vs Uni-R2 comparison
 - `unirouter/eval_compare.py` → Evaluation script
 
 **Interactive demo:**
 - `demo/app.py` → Gradio interface
 - `demo/config.py` → Configuration (modify this first!)
-- `demo/router.py` → CoRE routing logic
+- `demo/router.py` → R2-Router routing logic
 - `demo/baselines.py` → Baseline routers
 - `demo/llm_client.py` → OpenRouter API client
 - `demo/judge.py` → Quality evaluation
@@ -823,7 +823,7 @@ main/
 
 ## RouterArena Submission (In Progress)
 
-We are preparing to submit CoRE as a router to the **RouterArena** benchmark (https://github.com/RouteWorks/RouterArena).
+We are preparing to submit R2-Router as a router to the **RouterArena** benchmark (https://github.com/RouteWorks/RouterArena).
 
 ### Key Findings from Investigation
 
@@ -847,7 +847,7 @@ We are preparing to submit CoRE as a router to the **RouterArena** benchmark (ht
 - [ ] Clone RouterArena repo and check exact models in `universal_model_names.py`
 - [ ] Map our LLM pool to RouterArena's available models (find closest substitutes if needed)
 - [ ] Decide on submission strategy (A/B/C above)
-- [ ] Implement CoRE router adapter for RouterArena's interface
+- [ ] Implement R2-Router adapter for RouterArena's interface
 - [ ] Generate predictions on RouterArena's evaluation set
 - [ ] Submit PR following their contribution guidelines
 

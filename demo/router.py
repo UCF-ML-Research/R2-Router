@@ -1,6 +1,6 @@
 """
-CoRE Router Module
-Implements the CoRE (Constrained Response Evaluator) routing logic
+R2-Router Module
+Implements the R2-Router routing logic
 """
 
 import sys
@@ -21,19 +21,19 @@ if str(parent_dir) not in sys.path:
 import config
 
 try:
-    from main.core.predictor_sklearn import TokenPerformancePredictor
+    from main.r2.predictor_sklearn import TokenPerformancePredictor
     PREDICTOR_AVAILABLE = True
 except ImportError:
     PREDICTOR_AVAILABLE = False
     print("⚠️  predictor_sklearn not available")
 
 
-class CoRERouter:
-    """CoRE routing system that selects best (LLM, token_limit) combination"""
+class R2Router:
+    """R2-Router routing system that selects best (LLM, token_limit) combination"""
 
     def __init__(self, llm_pool: Dict = None):
         """
-        Initialize CoRE router
+        Initialize R2-Router
 
         Args:
             llm_pool: LLM pool configuration (uses config.LLM_POOL if None)
@@ -42,12 +42,12 @@ class CoRERouter:
         self.predictors = {}
         self.token_limits = config.TOKEN_LIMITS
 
-        print(f"Initializing CoRE router with {len(self.llm_pool)} LLMs...")
+        print(f"Initializing R2-Router with {len(self.llm_pool)} LLMs...")
 
     def load_models(self):
-        """Load all CoRE predictors from checkpoints"""
+        """Load all R2-Router predictors from checkpoints"""
         if not PREDICTOR_AVAILABLE:
-            raise ImportError("predictor_sklearn not available. Cannot load CoRE models.")
+            raise ImportError("predictor_sklearn not available. Cannot load R2-Router models.")
 
         for llm_name, llm_config in self.llm_pool.items():
             checkpoint_dir = llm_config["checkpoint"]
@@ -59,14 +59,14 @@ class CoRERouter:
             try:
                 predictor = TokenPerformancePredictor(load_dir=str(checkpoint_dir))
                 self.predictors[llm_name] = predictor
-                print(f"  ✓ Loaded CoRE model for {llm_name}")
+                print(f"  ✓ Loaded R2-Router model for {llm_name}")
             except Exception as e:
                 print(f"  ✗ Failed to load {llm_name}: {e}")
 
         if len(self.predictors) == 0:
-            raise RuntimeError("No CoRE models loaded. Check checkpoint paths.")
+            raise RuntimeError("No R2-Router models loaded. Check checkpoint paths.")
 
-        print(f"✅ CoRE router ready ({len(self.predictors)} models loaded)")
+        print(f"✅ R2-Router ready ({len(self.predictors)} models loaded)")
 
     def route(
         self,
@@ -221,17 +221,17 @@ class CoRERouter:
         return best_option
 
 
-class MockCoRERouter:
-    """Mock CoRE router for testing without checkpoints"""
+class MockR2Router:
+    """Mock R2-Router for testing without checkpoints"""
 
     def __init__(self, llm_pool: Dict = None):
         self.llm_pool = llm_pool or config.LLM_POOL
         self.token_limits = config.TOKEN_LIMITS
-        print(f"⚠️  Using MockCoRERouter ({len(self.llm_pool)} LLMs)")
+        print(f"⚠️  Using MockR2Router ({len(self.llm_pool)} LLMs)")
 
     def load_models(self):
         """No-op for mock router"""
-        print("✅ Mock CoRE router ready")
+        print("✅ Mock R2-Router ready")
 
     def route(
         self,
@@ -302,23 +302,23 @@ class MockCoRERouter:
 # Factory Function
 # ============================================================================
 
-def get_core_router(mock: bool = None) -> CoRERouter:
+def get_r2_router(mock: bool = None) -> R2Router:
     """
-    Get a CoRE router instance
+    Get a R2-Router instance
 
     Args:
         mock: Use mock router (uses config.ENABLE_MOCK_MODE if None)
 
     Returns:
-        CoRERouter or MockCoRERouter
+        R2Router or MockR2Router
     """
     if mock is None:
         mock = config.ENABLE_MOCK_MODE
 
     if mock:
-        return MockCoRERouter()
+        return MockR2Router()
     else:
-        return CoRERouter()
+        return R2Router()
 
 
 # ============================================================================
@@ -326,12 +326,12 @@ def get_core_router(mock: bool = None) -> CoRERouter:
 # ============================================================================
 
 if __name__ == "__main__":
-    print("Testing CoRE Router...")
+    print("Testing R2-Router...")
     print()
 
     # Test mock router
     print("=== Mock Router ===")
-    mock_router = MockCoRERouter()
+    mock_router = MockR2Router()
     mock_router.load_models()
 
     # Create dummy embedding
@@ -356,7 +356,7 @@ if __name__ == "__main__":
     if not config.ENABLE_MOCK_MODE and PREDICTOR_AVAILABLE:
         print("\n=== Real Router ===")
         try:
-            real_router = CoRERouter()
+            real_router = R2Router()
             real_router.load_models()
 
             result = real_router.route(embedding, lambda_val=0.5)

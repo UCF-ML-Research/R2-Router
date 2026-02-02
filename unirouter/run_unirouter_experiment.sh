@@ -3,7 +3,7 @@
 #
 # This script demonstrates:
 # 1. Training original UniRouter on initial model pool
-# 2. Training Uni-CoRE on the same pool
+# 2. Training Uni-R2 on the same pool
 # 3. Dynamically adding new (unseen) models without retraining
 # 4. Comparing routing performance across methods
 
@@ -41,13 +41,13 @@ NEW_MODELS=(
     "Qwen2.5-Math-7B-Instruct|0.35|data/Qwen2.5-Math-7B-Instruct.csv"
 )
 
-# Uni-CoRE Configuration
+# Uni-R2 Configuration
 VAL_SIZE=500                    # Validation set size
 N_CLUSTERS=100                  # Number of clusters
 USE_CLUSTERING=true             # Use clustering (recommended)
 
 # Token budgets to test (must match dataset!)
-# Available in CoRD dataset: 10,20,30,40,50,80,100,150,200,300,500,800,1200,2000,4000,unlimited
+# Available in R2-Bench dataset: 10,20,30,40,50,80,100,150,200,300,500,800,1200,2000,4000,unlimited
 TOKEN_BUDGETS="10,20,30,40,50,80,100,150,200,300,500,800,1200,2000,4000,9999"  # 9999 = unlimited
 
 # Lambda Distribution - Controls cost-performance tradeoff sampling
@@ -118,21 +118,21 @@ else
 fi
 
 # ============================================================================
-# Step 3: Check/Build Uni-CoRE
+# Step 3: Check/Build Uni-R2
 # ============================================================================
 
 echo ""
 echo "=========================================="
-echo "Step 3: Uni-CoRE (Multiple Token Budgets)"
+echo "Step 3: Uni-R2 (Multiple Token Budgets)"
 echo "=========================================="
 
-UNICORE_CHECKPOINT="$CHECKPOINT_DIR/unicore_feature_matrix.pkl"
+UNICORE_CHECKPOINT="$CHECKPOINT_DIR/uni_r2_feature_matrix.pkl"
 
 if [ -f "$UNICORE_CHECKPOINT" ]; then
-    echo "  [✓] Uni-CoRE feature matrix exists"
+    echo "  [✓] Uni-R2 feature matrix exists"
     echo "  Checkpoint: $UNICORE_CHECKPOINT"
 else
-    echo "  [ ] Uni-CoRE feature matrix does not exist"
+    echo "  [ ] Uni-R2 feature matrix does not exist"
     echo "  Will create during evaluation"
 fi
 
@@ -217,7 +217,7 @@ echo ""
 
 echo "Checkpoints saved to:"
 echo "  - Original UniRouter: $ORIGINAL_CHECKPOINT"
-echo "  - Uni-CoRE: $UNICORE_CHECKPOINT"
+echo "  - Uni-R2: $UNICORE_CHECKPOINT"
 echo "  - Validation set: $VAL_SET_FILE"
 echo ""
 
@@ -227,7 +227,7 @@ echo "1. Original UniRouter:"
 echo "   - Routes to best LLM (always unlimited tokens)"
 echo "   - Validation cost: $VAL_SIZE API calls per model"
 echo ""
-echo "2. Uni-CoRE:"
+echo "2. Uni-R2:"
 echo "   - Routes to best (LLM, token_budget) pair"
 IFS=',' read -ra BUDGETS <<< "$TOKEN_BUDGETS"
 echo "   - Validation cost: $((VAL_SIZE * ${#BUDGETS[@]})) API calls per model"

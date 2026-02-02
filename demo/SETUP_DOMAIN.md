@@ -1,4 +1,4 @@
-# CoRE Router - 永久域名配置指南
+# R2-Router - 永久域名配置指南
 
 ## 🎯 目标
 配置一个永久固定的自定义域名，例如：`router.yourdomain.com`
@@ -200,7 +200,7 @@ cd /home/jiaq/Research/Code/router/demo
 
 ## 🎉 完成！
 
-现在你的 CoRE Router 已经部署在：
+现在你的 R2-Router 已经部署在：
 
 **永久公网地址**: `https://router.yourdomain.com`
 
@@ -260,7 +260,7 @@ sudo nano /etc/systemd/system/core-router.service
 
 ```ini
 [Unit]
-Description=CoRE Router with Cloudflare Tunnel
+Description=R2-Router with Cloudflare Tunnel
 After=network.target
 
 [Service]

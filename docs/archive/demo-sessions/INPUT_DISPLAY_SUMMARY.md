@@ -37,20 +37,20 @@ Added visual display of the actual prompt sent to LLMs, with highlighted instruc
 
 | Method | Token Limit | Display |
 |--------|-------------|---------|
-| CoRE | Limited (e.g., 150) | Original query + **highlighted instructional prompt** |
-| CoRE | Unlimited | Original query only |
+| R2-Router | Limited (e.g., 150) | Original query + **highlighted instructional prompt** |
+| R2-Router | Unlimited | Original query only |
 | CARROT | N/A (always unlimited) | Original query only |
 
 ## Key Benefits
 
 ✅ **Transparency**: See exactly what was sent to the LLM
 ✅ **Debugging**: Verify instructional prompts are correct
-✅ **Comparison**: Visual difference between CoRE and CARROT
+✅ **Comparison**: Visual difference between R2-Router and CARROT
 ✅ **Education**: Understand how token budgets work
 
 ## Example
 
-**For CoRE with 50-word limit:**
+**For R2-Router with 50-word limit:**
 ```
 Original query text here
 
@@ -66,4 +66,4 @@ Original query text here
 ```
 
 ---
-*This enhancement addresses the user's request to show input frames with highlighted instructional prompts for both CoRE and CARROT.*
+*This enhancement addresses the user's request to show input frames with highlighted instructional prompts for both R2-Router and CARROT.*

@@ -1,5 +1,5 @@
 #!/bin/bash
-# OOD Evaluation Pipeline: Train CoRE and baselines, evaluate generalization
+# OOD Evaluation Pipeline: Train R2-Router and baselines, evaluate generalization
 #
 # This script trains models on 19 categories and tests on 1 held-out category
 # to evaluate out-of-distribution generalization.
@@ -28,7 +28,7 @@ LLM_POOL=(
     # "Qwen3-Next-80B-A3B-Instruct|0.6|data/Qwen3-Next-80B-A3B-Instruct.csv"
 )
 
-# CoRE Hyperparameters - IMPORTANT: Must match IID training!
+# R2-Router Hyperparameters - IMPORTANT: Must match IID training!
 CORE_MODEL_TYPE="ridge"        # Use Ridge for better OOD generalization
 CORE_ALPHA=10.0                # Regularization strength (MUST match IID)
 
@@ -146,7 +146,7 @@ echo "OOD EVALUATION - Out-of-Distribution Test"
 echo "=========================================="
 echo "Test Category: $TEST_CATEGORY"
 echo "Model Pool: ${#LLM_POOL[@]} models"
-echo "CoRE Config: $CORE_MODEL_TYPE (alpha=$CORE_ALPHA)"
+echo "R2-Router Config: $CORE_MODEL_TYPE (alpha=$CORE_ALPHA)"
 echo "Lambda Distribution: $LAMBDA_DISTRIBUTION"
 echo "Quick Mode: $QUICK_MODE"
 echo "Output: $OUTPUT_DIR"
@@ -174,7 +174,7 @@ fi
 echo ""
 echo "Checking OOD checkpoints..."
 
-# Count existing CoRE checkpoints
+# Count existing R2-Router checkpoints
 EXISTING_CORE=0
 TOTAL_CORE=${#LLM_POOL[@]}
 
@@ -205,7 +205,7 @@ for llm in "${LLM_POOL[@]}"; do
 done
 
 echo ""
-echo "CoRE checkpoints: $EXISTING_CORE/$TOTAL_CORE exist"
+echo "R2-Router checkpoints: $EXISTING_CORE/$TOTAL_CORE exist"
 
 # Check baseline checkpoints
 CARROT_KNN_EXISTS=false
@@ -267,7 +267,7 @@ CONFIG_CONTENT="# OOD Evaluation Configuration
 # Training: 19 categories (excluding test category)
 # Testing: 1 held-out category (${TEST_CATEGORY})
 
-[CoRE Hyperparameters]
+[R2-Router Hyperparameters]
 model_type = ${CORE_MODEL_TYPE}
 alpha = ${CORE_ALPHA}
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Compare CoRE vs CARROT-Linear vs MIRT using all-MiniLM-L6-v2 embeddings.
+Compare R2-Router vs CARROT-Linear vs MIRT using all-MiniLM-L6-v2 embeddings.
 Uses only successfully trained models to avoid encoding issues.
 """
 
@@ -15,7 +15,7 @@ from tqdm import tqdm
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from main.shared.dataset_manager import DatasetManager
-from main.core.predictor_sklearn import TokenPerformancePredictor, route_scores
+from main.r2.predictor_sklearn import TokenPerformancePredictor, route_scores
 from main.baselines.carrot.baselines_carrot import CarrotLinearBaseline
 from main.baselines.irt.baselines_irt import IRTBaseline
 from sentence_transformers import SentenceTransformer
@@ -87,7 +87,7 @@ def route_baseline(Y_hat_score, Y_hat_count, quality_test, token_count_test, lam
 def main():
     """Main comparison pipeline."""
     print("=" * 80)
-    print("Embedding Ablation: CoRE vs CARROT-Linear vs MIRT")
+    print("Embedding Ablation: R2-Router vs CARROT-Linear vs MIRT")
     print("Using all-MiniLM-L6-v2 embeddings with successfully trained models")
     print("=" * 80)
 
@@ -239,12 +239,12 @@ def main():
         )
         print("✓ MIRT training complete")
 
-    # Load CoRE predictors
+    # Load R2-Router predictors
     print("\n" + "=" * 80)
-    print("Loading CoRE Predictors")
+    print("Loading R2-Router Predictors")
     print("=" * 80)
 
-    # Build CoRE predictions
+    # Build R2-Router predictions
     core_pred_score_test = []
     core_pred_count_test = []
     core_true_score_test = []
@@ -252,7 +252,7 @@ def main():
 
     checkpoint_dir = f'ablation/checkpoints_comparison/{embedding_key}'
 
-    for model_name, model_size, csv_path in tqdm(models, desc="Loading CoRE"):
+    for model_name, model_size, csv_path in tqdm(models, desc="Loading R2-Router"):
         model_checkpoint = os.path.join(checkpoint_dir, model_name)
 
         # Load predictor
@@ -280,12 +280,12 @@ def main():
     print("Evaluating Routing Performance")
     print("=" * 80)
 
-    # Evaluate CoRE
-    print("\nEvaluating CoRE...")
-    core_costs, core_perfs = route_baseline(
+    # Evaluate R2-Router
+    print("\nEvaluating R2-Router...")
+    r2_costs, core_perfs = route_baseline(
         core_Y_hat_score, core_Y_hat_count, quality_test, token_count_test, lambda_range, sizes_vec
     )
-    core_audc = compute_audc(core_costs, core_perfs)
+    core_audc = compute_audc(r2_costs, core_perfs)
     core_peak = core_perfs.max()
 
     # Evaluate CARROT-Linear
@@ -326,13 +326,13 @@ def main():
     print(f"Target accuracy (95%): {target_accuracy:.4f}")
 
     # Global cost normalization
-    all_costs = np.concatenate([core_costs, carrot_costs, mirt_costs])
+    all_costs = np.concatenate([r2_costs, carrot_costs, mirt_costs])
     global_min_cost = np.min(all_costs)
     global_max_cost = np.max(all_costs)
     print(f"Global cost range: [{global_min_cost:.2f}, {global_max_cost:.2f}]")
 
     # Compute QNC for each method
-    core_qnc = compute_qnc(core_costs, core_perfs, target_accuracy, global_min_cost, global_max_cost)
+    core_qnc = compute_qnc(r2_costs, core_perfs, target_accuracy, global_min_cost, global_max_cost)
     carrot_qnc = compute_qnc(carrot_costs, carrot_perfs, target_accuracy, global_min_cost, global_max_cost)
     mirt_qnc = compute_qnc(mirt_costs, mirt_perfs, target_accuracy, global_min_cost, global_max_cost)
 
@@ -342,7 +342,7 @@ def main():
     print("=" * 80)
 
     results = {
-        'Method': ['CoRE', 'CARROT-Linear', 'MIRT'],
+        'Method': ['R2-Router', 'CARROT-Linear', 'MIRT'],
         'AUDC': [core_audc, carrot_audc, mirt_audc],
         'QNC': [core_qnc, carrot_qnc, mirt_qnc],
         'Peak_Accuracy': [core_peak, carrot_peak, mirt_peak]
@@ -361,9 +361,9 @@ def main():
     curves_data = []
     for i, lam in enumerate(lambda_range):
         curves_data.append({
-            'method': 'CoRE',
+            'method': 'R2-Router',
             'lambda': lam,
-            'cost': core_costs[i],
+            'cost': r2_costs[i],
             'performance': core_perfs[i]
         })
         curves_data.append({

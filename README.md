@@ -115,7 +115,7 @@ Browser opens at `http://localhost:7860`
 ```
 r2-router/
 ├── main/                        # Main evaluation code
-│   ├── core/                    # R2-Router predictor implementations
+│   ├── r2/                    # R2-Router predictor implementations
 │   │   ├── predictor.py         # PyTorch MLP (3-layer, [256,128,64])
 │   │   └── predictor_sklearn.py # Ridge regression (faster)
 │   ├── baselines/               # Baseline methods
@@ -135,7 +135,7 @@ r2-router/
 │   └── ood_dataset_manager.py   # Category-based splits
 ├── unirouter/                   # UniRouter integration
 │   ├── eval_compare.py          # UniRouter vs Uni-R2Router
-│   ├── uni_core.py              # Uni-R2Router implementation
+│   ├── uni_r2.py              # Uni-R2Router implementation
 │   └── unirouter_original.py    # Original UniRouter
 ├── demo/                        # Interactive web demo
 │   ├── app.py                   # Gradio interface
@@ -155,12 +155,12 @@ r2-router/
 
 ```bash
 # Ridge regression (fast, recommended)
-python -m main.core.train_core \
+python -m main.r2.train_r2 \
     --model_type sklearn \
     --model "Model-Name" "0.85" "data/Model-Name.csv" "checkpoints/Model-Name"
 
 # PyTorch MLP (higher accuracy)
-python -m main.core.train_core \
+python -m main.r2.train_r2 \
     --model_type torch_mlp \
     --model "Model-Name" "0.85" "data/Model-Name.csv" "checkpoints/Model-Name"
 ```

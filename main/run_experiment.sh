@@ -1,8 +1,8 @@
 #!/bin/bash
-# Complete pipeline: 1) Define LLM pool, 2) Train CoRE, 3) Train CARROT, 4) Compare
+# Complete pipeline: 1) Define LLM pool, 2) Train R2-Router, 3) Train CARROT, 4) Compare
 #
 # Checkpoint behavior:
-# - CoRE: Per-model checkpoints. Only retrain if model+scheme combination doesn't exist.
+# - R2-Router: Per-model checkpoints. Only retrain if model+scheme combination doesn't exist.
 # - CARROT: Pool-level checkpoints. Retrain if model pool OR training scheme changes.
 
 set -e
@@ -33,7 +33,7 @@ LLM_POOL=(
     # "Qwen3-Next-80B-A3B-Instruct|0.6|data/Qwen3-Next-80B-A3B-Instruct.csv"
 )
 
-# CoRE Hyperparameters - Edit these to tune prediction precision
+# R2-Router Hyperparameters - Edit these to tune prediction precision
 # Model types: "linear", "ridge", "lasso", "elasticnet", "random_forest", "gradient_boosting", "mlp", "torch_mlp"
 CORE_MODEL_TYPE="ridge"        # Model type (ridge/lasso/mlp/torch_mlp)
 CORE_ALPHA=10.0                # Regularization strength (for ridge/lasso/elasticnet)
@@ -106,11 +106,11 @@ for llm in "${LLM_POOL[@]}"; do
 done
 
 # ============================================================================
-# Step 1: Train CoRE Predictors (or load if already trained)
+# Step 1: Train R2-Router Predictors (or load if already trained)
 # ============================================================================
 
 echo "=========================================="
-echo "STEP 1: Checking CoRE models (${#LLM_POOL[@]} models)"
+echo "STEP 1: Checking R2-Router models (${#LLM_POOL[@]} models)"
 echo "=========================================="
 echo "Model Type: $CORE_MODEL_TYPE"
 echo "Alpha: $CORE_ALPHA"
@@ -159,9 +159,9 @@ echo ""
 
 # Only train if there are models that need training
 if [ ${#MODELS_TO_TRAIN[@]} -gt 0 ]; then
-    echo "Training CoRE models..."
+    echo "Training R2-Router models..."
     if [ "$CORE_MODEL_TYPE" = "torch_mlp" ]; then
-        python -m main.core.train_core \
+        python -m main.r2.train_r2 \
             --model_type "$CORE_MODEL_TYPE" \
             --hidden_layers "$CORE_HIDDEN_LAYERS" \
             --torch_epochs "$CORE_TORCH_EPOCHS" \
@@ -170,7 +170,7 @@ if [ ${#MODELS_TO_TRAIN[@]} -gt 0 ]; then
             --torch_batch_size "$CORE_TORCH_BATCH_SIZE" \
             "${MODELS_TO_TRAIN[@]}"
     else
-        python -m main.core.train_core \
+        python -m main.r2.train_r2 \
             --model_type "$CORE_MODEL_TYPE" \
             --alpha "$CORE_ALPHA" \
             --l1_ratio "$CORE_L1_RATIO" \
@@ -181,7 +181,7 @@ if [ ${#MODELS_TO_TRAIN[@]} -gt 0 ]; then
             "${MODELS_TO_TRAIN[@]}"
     fi
 else
-    echo "All CoRE models already trained! Skipping training step."
+    echo "All R2-Router models already trained! Skipping training step."
 fi
 
 # ============================================================================
@@ -303,12 +303,12 @@ if [ "$NEEDS_IRT_TRAINING" = true ]; then
 fi
 
 # ============================================================================
-# Step 4: Compare CoRE vs Baselines (CARROT and IRT)
+# Step 4: Compare R2-Router vs Baselines (CARROT and IRT)
 # ============================================================================
 
 echo ""
 echo "=========================================="
-echo "STEP 4: Comparing CoRE vs Baselines (CARROT and IRT)"
+echo "STEP 4: Comparing R2-Router vs Baselines (CARROT and IRT)"
 echo "=========================================="
 echo "Lambda Distribution: $LAMBDA_DISTRIBUTION"
 echo "Target Accuracy Rate: $TARGET_ACCURACY_RATE"
@@ -322,27 +322,27 @@ echo "=========================================="
 echo "DONE!"
 echo "=========================================="
 echo "Results saved to:"
-echo "  - ./comparison_results/main/core_vs_baselines_metrics.csv"
-echo "  - ./comparison_results/main/core_vs_baselines_curves.csv"
-echo "  - ./comparison_results/main/core_vs_baselines_curves.png"
+echo "  - ./comparison_results/main/r2_vs_baselines_metrics.csv"
+echo "  - ./comparison_results/main/r2_vs_baselines_curves.csv"
+echo "  - ./comparison_results/main/r2_vs_baselines_curves.png"
 echo "  - ./plots/carrot_knn/"
 echo "  - ./plots/carrot_linear/"
 echo "  - ./plots/irt_mirt/"
 echo "  - ./plots/irt_nirt/"
 echo ""
 echo "Configuration used:"
-echo "  CoRE Model Type: $CORE_MODEL_TYPE"
+echo "  R2-Router Model Type: $CORE_MODEL_TYPE"
 if [ "$CORE_MODEL_TYPE" = "torch_mlp" ]; then
-    echo "  CoRE Hidden Layers: $CORE_HIDDEN_LAYERS"
-    echo "  CoRE Epochs: $CORE_TORCH_EPOCHS"
-    echo "  CoRE Learning Rate: $CORE_TORCH_LR"
-    echo "  CoRE Dropout: $CORE_TORCH_DROPOUT"
-    echo "  CoRE Batch Size: $CORE_TORCH_BATCH_SIZE"
+    echo "  R2-Router Hidden Layers: $CORE_HIDDEN_LAYERS"
+    echo "  R2-Router Epochs: $CORE_TORCH_EPOCHS"
+    echo "  R2-Router Learning Rate: $CORE_TORCH_LR"
+    echo "  R2-Router Dropout: $CORE_TORCH_DROPOUT"
+    echo "  R2-Router Batch Size: $CORE_TORCH_BATCH_SIZE"
 elif [ "$CORE_MODEL_TYPE" = "mlp" ]; then
-    echo "  CoRE Hidden Layers: $CORE_HIDDEN_LAYERS"
-    echo "  CoRE Max Iterations: $CORE_MAX_ITER"
+    echo "  R2-Router Hidden Layers: $CORE_HIDDEN_LAYERS"
+    echo "  R2-Router Max Iterations: $CORE_MAX_ITER"
 elif [ "$CORE_MODEL_TYPE" = "ridge" ] || [ "$CORE_MODEL_TYPE" = "lasso" ] || [ "$CORE_MODEL_TYPE" = "elasticnet" ]; then
-    echo "  CoRE Alpha: $CORE_ALPHA"
+    echo "  R2-Router Alpha: $CORE_ALPHA"
 fi
 echo "  Training Scheme: $SCHEME_SUFFIX"
 echo "  Lambda Distribution: $LAMBDA_DISTRIBUTION"
@@ -351,7 +351,7 @@ echo "  IRT Latent Dim: $IRT_LATENT_DIM"
 echo "  IRT Epochs: $IRT_EPOCHS"
 echo ""
 echo "Checkpoints saved to:"
-echo "  CoRE:"
+echo "  R2-Router:"
 for llm in "${LLM_POOL[@]}"; do
     IFS='|' read -r name size csv <<< "$llm"
     echo "    - ./checkpoints/main/${name}_${SCHEME_SUFFIX}/"

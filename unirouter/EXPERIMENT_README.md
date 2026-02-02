@@ -1,6 +1,6 @@
 # UniRouter Experiments: Running Comparison Evaluations
 
-This guide explains how to run experiments comparing **Original UniRouter** vs **Uni-CoRE** with dynamic model addition.
+This guide explains how to run experiments comparing **Original UniRouter** vs **Uni-R2** with dynamic model addition.
 
 ---
 
@@ -13,7 +13,7 @@ bash unirouter/run_unirouter_experiment.sh
 
 This will:
 1. Train Original UniRouter on initial 3 models (GLM-4.5-Air, Llama-3.2-3B, Qwen3-0.6B)
-2. Train Uni-CoRE on the same 3 models
+2. Train Uni-R2 on the same 3 models
 3. **Dynamically add 2 new models** (Qwen2.5-Math-7B, Llama-3.1-70B) WITHOUT retraining
 4. Compare routing performance across all methods
 5. Generate cost-performance curves and visualizations
@@ -31,7 +31,7 @@ This will:
 - **Routing**: argmin [error + λ × cost]
 - **Validation Cost**: 500 API calls per model
 
-### Uni-CoRE
+### Uni-R2
 - **Input**: Query embedding
 - **Output**: Best (LLM, token_budget) pair
 - **Features**: Per-cluster, per-budget quality matrix Ψ(h) ∈ R^(K×B)
@@ -90,9 +90,9 @@ USE_CLUSTERING=true         # Use clustering (recommended)
 
 **IMPORTANT**: Token budgets must match what's available in your CSV files!
 
-For the CoRD dataset, the available token limits are:
+For the R2-Bench dataset, the available token limits are:
 ```bash
-# Full CoRD dataset budgets (16 limits)
+# Full R2-Bench dataset budgets (16 limits)
 TOKEN_BUDGETS="10,20,30,40,50,80,100,150,200,300,500,800,1200,2000,4000,9999"
 
 # Sparse subset (faster validation, less granular)
@@ -125,8 +125,8 @@ LAMBDA_STEPS=100     # Number of points on curve
 method,peak_accuracy,AUDC,QNC
 Original UniRouter (Initial),0.8200,0.7100,0.4500
 Original UniRouter (Expanded),0.8450,0.7600,0.3800
-Uni-CoRE (Initial),0.8200,0.7800,0.2200
-Uni-CoRE (Expanded),0.8450,0.8300,0.1500
+Uni-R2 (Initial),0.8200,0.7800,0.2200
+Uni-R2 (Expanded),0.8450,0.8300,0.1500
 ```
 
 **Metrics explained**:
@@ -136,8 +136,8 @@ Uni-CoRE (Expanded),0.8450,0.8300,0.1500
 
 **Key Insights from Example**:
 - Both methods reach same peak accuracy (0.845 after expansion)
-- Uni-CoRE has **higher AUDC** (0.83 vs 0.76) → Better cost-quality tradeoff
-- Uni-CoRE has **lower QNC** (0.15 vs 0.38) → Achieves 90% quality at lower cost
+- Uni-R2 has **higher AUDC** (0.83 vs 0.76) → Better cost-quality tradeoff
+- Uni-R2 has **lower QNC** (0.15 vs 0.38) → Achieves 90% quality at lower cost
 
 ### Curves CSV (`comparison_curves.csv`)
 
@@ -157,7 +157,7 @@ Shows cost-performance Pareto frontier:
 - **Higher and left = better** (high quality, low cost)
 
 **What to look for**:
-- Uni-CoRE curve should dominate Original UniRouter (higher for same cost)
+- Uni-R2 curve should dominate Original UniRouter (higher for same cost)
 - Expanded pool should dominate initial pool
 - More token budgets → smoother curve
 
@@ -198,7 +198,7 @@ If you've already run the experiment once, subsequent runs will load checkpoints
 ```
 Checkpoints found:
   ✓ Original UniRouter: ./unirouter/checkpoints/original_unirouter.pkl
-  ✓ Uni-CoRE: ./unirouter/checkpoints/unicore_feature_matrix.pkl
+  ✓ Uni-R2: ./unirouter/checkpoints/uni_r2_feature_matrix.pkl
 ```
 
 To force recomputation, delete checkpoint files:
@@ -216,14 +216,14 @@ rm -rf unirouter/checkpoints/*.pkl
 |------|------|-------|
 | Validation set creation | ~5 sec | K-means clustering |
 | Original UniRouter (5 models) | ~2 sec | Simple feature computation |
-| Uni-CoRE (5 models) | ~10 sec | More features (8 budgets) |
+| Uni-R2 (5 models) | ~10 sec | More features (8 budgets) |
 | Evaluation (100 lambda points) | ~30 sec | Route 6,000 test queries |
 | **Total** | **~1 min** | With checkpoints: ~30 sec |
 
 **Scaling**:
 - 2× models → 2× registration time (no change in routing time)
 - 2× validation size → 2× registration time
-- 2× token budgets → 2× Uni-CoRE registration time (Original unchanged)
+- 2× token budgets → 2× Uni-R2 registration time (Original unchanged)
 - 2× test queries → 2× evaluation time
 
 ---
@@ -285,13 +285,13 @@ unirouter/
 ├── run_unirouter_experiment.sh    # Main experiment script
 ├── eval_compare.py                # Comparison evaluation
 ├── unirouter_original.py          # Original UniRouter implementation
-├── uni_core.py                    # Uni-CoRE implementation
-├── UNI_CORE_README.md             # Uni-CoRE documentation
+├── uni_r2.py                    # Uni-R2 implementation
+├── UNI_CORE_README.md             # Uni-R2 documentation
 ├── COMPARISON.md                  # Detailed comparison
 ├── EXPERIMENT_README.md           # This file
 ├── checkpoints/                   # Saved model features
 │   ├── original_unirouter.pkl
-│   └── unicore_feature_matrix.pkl
+│   └── uni_r2_feature_matrix.pkl
 └── results/                       # Evaluation outputs
     ├── comparison_metrics.csv
     ├── comparison_curves.csv
@@ -354,11 +354,11 @@ If you use this code, please cite:
 }
 ```
 
-For Uni-CoRE (our extension combining UniRouter + CoRE):
+For Uni-R2 (our extension combining UniRouter + R2-Router):
 
 ```bibtex
 @article{unicore2025,
-  title={Uni-CoRE: Universal Cost-aware Routing with Token Budget Optimization},
+  title={Uni-R2: Universal Cost-aware Routing with Token Budget Optimization},
   author={Your Name},
   journal={TBD},
   year={2025}
@@ -373,9 +373,9 @@ For Uni-CoRE (our extension combining UniRouter + CoRE):
 2. **Customize model pools**: Edit `INITIAL_POOL` and `NEW_MODELS`
 3. **Tune hyperparameters**: Adjust `VAL_SIZE`, `N_CLUSTERS`, `TOKEN_BUDGETS`
 4. **Analyze results**: Check `unirouter/results/` for outputs
-5. **Compare with CoRE**: See `COMPARISON.md` for detailed analysis
+5. **Compare with R2-Router**: See `COMPARISON.md` for detailed analysis
 
 For questions or issues, see:
-- `UNI_CORE_README.md`: Uni-CoRE architecture and implementation
-- `COMPARISON.md`: Original UniRouter vs Uni-CoRE comparison
+- `UNI_CORE_README.md`: Uni-R2 architecture and implementation
+- `COMPARISON.md`: Original UniRouter vs Uni-R2 comparison
 - `../CLAUDE.md`: Full project documentation

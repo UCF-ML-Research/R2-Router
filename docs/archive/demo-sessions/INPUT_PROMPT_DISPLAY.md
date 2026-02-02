@@ -86,7 +86,7 @@ Added input frame display before the response section:
 
 ## Visual Result
 
-### For CoRE with Limited Token Setting:
+### For R2-Router with Limited Token Setting:
 - Shows original query in normal text
 - Shows instructional prompt in **highlighted yellow box**:
   ```
@@ -95,7 +95,7 @@ Added input frame display before the response section:
   Answer:
   ```
 
-### For CoRE with Unlimited Setting:
+### For R2-Router with Unlimited Setting:
 - Shows only the original query (no highlighting)
 
 ### For CARROT:
@@ -119,9 +119,9 @@ Added input frame display before the response section:
 
 1. **Transparency**: Users can see exactly what prompt was sent to the LLM
 2. **Debugging**: Helps verify that instructional prompts are correctly added
-3. **Comparison**: Easy to compare CoRE (with instructional prompt) vs CARROT (without)
+3. **Comparison**: Easy to compare R2-Router (with instructional prompt) vs CARROT (without)
 4. **Education**: Users understand how token limits are enforced through prompts
-5. **Architectural Clarity**: Visual distinction between CoRE's curve approach and CARROT's single-point approach
+5. **Architectural Clarity**: Visual distinction between R2-Router's curve approach and CARROT's single-point approach
 
 ## Technical Notes
 

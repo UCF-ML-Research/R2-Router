@@ -1,6 +1,6 @@
 """
-CoRE Router Demo - Gradio Web Interface
-Interactive demo for testing CoRE routing vs CARROT baselines
+R2-Router Demo - Gradio Web Interface
+Interactive demo for testing R2-Router routing vs CARROT baselines
 """
 
 import sys
@@ -20,11 +20,11 @@ import plotly.graph_objects as go
 # Import demo modules (now guaranteed to be from demo directory)
 import config
 from embedder import get_embedder
-from router import get_core_router
+from router import get_r2_router
 from baselines import get_carrot_router
 from llm_client import get_llm_client
 from judge import get_judge
-from visualizer import generate_core_visualization, generate_carrot_visualization
+from visualizer import generate_r2_visualization, generate_carrot_visualization
 
 
 # ============================================================================
@@ -32,7 +32,7 @@ from visualizer import generate_core_visualization, generate_carrot_visualizatio
 # ============================================================================
 
 print("="*60)
-print("CoRE Router Demo - Initializing...")
+print("R2-Router Demo - Initializing...")
 print("="*60)
 print()
 
@@ -44,8 +44,8 @@ print()
 embedder = get_embedder()
 embedder.load_model()
 
-core_router = get_core_router()
-core_router.load_models()
+r2_router = get_r2_router()
+r2_router.load_models()
 
 carrot_router = get_carrot_router()
 carrot_router.load_model()
@@ -64,47 +64,47 @@ print()
 # Visualization Function
 # ============================================================================
 
-def generate_result_analysis(core_result, carrot_result):
+def generate_result_analysis(r2_result, carrot_result):
     """
     Generate Result Analysis section with Plotly grouped bar chart comparing metrics
     Each metric uses its own local Y-scale for better visual comparison
 
     Args:
-        core_result: Dictionary with CoRE results (or None)
+        r2_result: Dictionary with R2-Router results (or None)
         carrot_result: Dictionary with CARROT results (or None)
 
     Returns:
         Plotly figure object (for gr.Plot) or None
     """
-    if not core_result or not carrot_result:
+    if not r2_result or not carrot_result:
         return None
 
     # Extract metrics
     metrics_data = [
         {
             'name': 'Tokens',
-            'core': core_result.get('actual_tokens', 0),
+            'core': r2_result.get('actual_tokens', 0),
             'carrot': carrot_result.get('actual_tokens', 0),
             'lower_better': True,
             'use_log': False
         },
         {
             'name': 'Cost',
-            'core': core_result.get('actual_cost', 0),
+            'core': r2_result.get('actual_cost', 0),
             'carrot': carrot_result.get('actual_cost', 0),
             'lower_better': True,
             'use_log': False
         },
         {
             'name': 'Quality',
-            'core': core_result.get('actual_score', 0),
+            'core': r2_result.get('actual_score', 0),
             'carrot': carrot_result.get('actual_score', 0),
             'lower_better': False,
             'use_log': False
         },
         {
             'name': 'Score',
-            'core': core_result.get('actual_risk', 0),
+            'core': r2_result.get('actual_risk', 0),
             'carrot': carrot_result.get('actual_risk', 0),
             'lower_better': False,
             'use_log': True  # Use log scale because values can be negative
@@ -145,21 +145,21 @@ def generate_result_analysis(core_result, carrot_result):
             core_text = f"🏆 {core_val:.2f}" if core_better else f"{core_val:.2f}"
             carrot_text = f"🏆 {carrot_val:.2f}" if not core_better and not is_tie else f"{carrot_val:.2f}"
 
-        # Fixed colors: CoRE = blue, CARROT = orange
-        core_color = '#667eea'   # Blue for CoRE
+        # Fixed colors: R2-Router = blue, CARROT = orange
+        core_color = '#667eea'   # Blue for R2-Router
         carrot_color = '#f39c12'  # Orange for CARROT
 
-        # Add CoRE bar
+        # Add R2-Router bar
         fig.add_trace(
             go.Bar(
-                name='🎯 CoRE',
-                x=['CoRE'],
+                name='🎯 R2-Router',
+                x=['R2-Router'],
                 y=[core_val],
                 text=[core_text],
                 textposition='outside',
                 marker_color=core_color,
                 showlegend=(idx == 1),  # Only show legend for first subplot
-                hovertemplate=f'CoRE: {core_text}<extra></extra>'
+                hovertemplate=f'R2-Router: {core_text}<extra></extra>'
             ),
             row=1, col=idx
         )
@@ -194,7 +194,7 @@ def generate_result_analysis(core_result, carrot_result):
 
     # Update overall layout
     fig.update_layout(
-        title_text="📈 Result Analysis: CoRE vs CARROT",
+        title_text="📈 Result Analysis: R2-Router vs CARROT",
         title_font=dict(size=24, color='#9b59b6', family='Arial Black'),
         title_x=0.5,
         height=500,
@@ -238,13 +238,13 @@ def generate_visualizations(
     query: str
 ):
     """
-    Generate interactive visualizations for CoRE and CARROT
+    Generate interactive visualizations for R2-Router and CARROT
 
     Args:
         query: User query text
 
     Returns:
-        Tuple of (core_figure, carrot_figure)
+        Tuple of (r2_figure, carrot_figure)
     """
     if not query.strip():
         return None, None
@@ -252,13 +252,13 @@ def generate_visualizations(
     # Generate embedding
     embedding = embedder.embed(query)
 
-    # Generate CoRE visualization (no budget line)
-    core_fig = generate_core_visualization(embedding, core_router, budget=None)
+    # Generate R2-Router visualization (no budget line)
+    r2_fig = generate_r2_visualization(embedding, r2_router, budget=None)
 
     # Generate CARROT visualization
     carrot_fig = generate_carrot_visualization(embedding, carrot_router)
 
-    return core_fig, carrot_fig
+    return r2_fig, carrot_fig
 
 
 # ============================================================================
@@ -270,7 +270,7 @@ def run_single_inference_internal(
     llm_name: str,
     token_limit: str,
     embedding: np.ndarray = None,
-    method_name: str = "CoRE"
+    method_name: str = "R2-Router"
 ) -> dict:
     """
     Internal function: Run inference and return results as dictionary
@@ -279,7 +279,7 @@ def run_single_inference_internal(
         query: User query text
         llm_name: Selected LLM name
         embedding: Pre-computed embedding (optional, will compute if None)
-        method_name: "CoRE" or "CARROT"
+        method_name: "R2-Router" or "CARROT"
 
     Returns:
         Dictionary with all results
@@ -296,9 +296,9 @@ def run_single_inference_internal(
     }
 
     # Recalculate predictions for this specific option
-    if method_name == "CoRE":
-        predictor = core_router.predictors[llm_name]
-        llm_size = core_router.llm_pool[llm_name]["size"]
+    if method_name == "R2-Router":
+        predictor = r2_router.predictors[llm_name]
+        llm_size = r2_router.llm_pool[llm_name]["size"]
 
         quality_limited, quality_unlimited, token_count_unlimited = predictor.predict(embedding)
         quality_limited = np.clip(quality_limited, 0, 1)
@@ -310,7 +310,7 @@ def run_single_inference_internal(
             predicted_count = token_count_unlimited[0]
         else:
             token_limit_int = int(token_limit)
-            limited_token_limits = [t for t in core_router.token_limits if t != "unlimited"]
+            limited_token_limits = [t for t in r2_router.token_limits if t != "unlimited"]
             token_idx = limited_token_limits.index(token_limit_int)
             predicted_score = quality_limited[0, token_idx]
             predicted_count = min(token_limit_int, token_count_unlimited[0])
@@ -362,7 +362,7 @@ def run_single_inference_internal(
     actual_score, judge_feedback = judge.evaluate(query, response)
 
     # Calculate actual cost
-    llm_size = core_router.llm_pool[llm_name]["size"]
+    llm_size = r2_router.llm_pool[llm_name]["size"]
     actual_cost = actual_tokens * llm_size
 
     # Calculate metrics
@@ -409,8 +409,8 @@ def run_single_inference(
         start_time = time.time()
 
         # Determine which method this LLM belongs to
-        if llm_name in core_router.predictors:
-            method_name = "CoRE"
+        if llm_name in r2_router.predictors:
+            method_name = "R2-Router"
         else:
             method_name = "CARROT"
 
@@ -464,7 +464,7 @@ def process_query(
     Args:
         query: User query text
         lambda_val: Lambda value (0-1)
-        use_core: Whether to use CoRE
+        use_core: Whether to use R2-Router
         use_carrot: Whether to use CARROT
         progress: Gradio progress tracker
 
@@ -483,7 +483,7 @@ def process_query(
     # Determine which methods to use
     methods = []
     if use_core:
-        methods.append(("CoRE", core_router))
+        methods.append(("R2-Router", r2_router))
     if use_carrot:
         methods.append(("CARROT", carrot_router))
 
@@ -508,34 +508,34 @@ def process_query(
         routing_decisions.append((method_name, router, routing_result))
 
     # Show routing decisions in card-style format (side-by-side)
-    # Separate CoRE and CARROT results
-    core_result = None
+    # Separate R2-Router and CARROT results
+    r2_result = None
     carrot_result = None
 
     for method_name, _, routing_result in routing_decisions:
-        if method_name == "CoRE":
-            core_result = routing_result
+        if method_name == "R2-Router":
+            r2_result = routing_result
         elif "CARROT" in method_name:
             carrot_result = routing_result
 
     # Create side-by-side layout
     routing_info_html = '<div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; margin: 15px 0;">'
 
-    # CoRE column
-    if core_result:
+    # R2-Router column
+    if r2_result:
         routing_info_html += f"""
         <div style="background: white; border: 1px solid #e0e0e0; border-radius: 10px; padding: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
             <div style="font-size: 20px; font-weight: bold; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid #667eea;">
-                🎯 CoRE
+                🎯 R2-Router
             </div>
             <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin: 15px 0;">
                 <div style="background: #f8f9fa; padding: 12px; border-radius: 5px; border-left: 3px solid #667eea;">
                     <div style="font-size: 12px; color: #666; text-transform: uppercase;">Selected LLM</div>
-                    <div style="font-size: 16px; font-weight: bold; color: #333; margin-top: 5px;">{core_result['llm_name']}</div>
+                    <div style="font-size: 16px; font-weight: bold; color: #333; margin-top: 5px;">{r2_result['llm_name']}</div>
                 </div>
                 <div style="background: #f8f9fa; padding: 12px; border-radius: 5px; border-left: 3px solid #667eea;">
                     <div style="font-size: 12px; color: #666; text-transform: uppercase;">Token Number</div>
-                    <div style="font-size: 16px; font-weight: bold; color: #333; margin-top: 5px;">{core_result['token_limit']}</div>
+                    <div style="font-size: 16px; font-weight: bold; color: #333; margin-top: 5px;">{r2_result['token_limit']}</div>
                 </div>
             </div>
         </div>
@@ -629,7 +629,7 @@ def process_query(
             })
 
     # Build LLM responses section in card-style format (side-by-side)
-    # Separate CoRE and CARROT results
+    # Separate R2-Router and CARROT results
     core_response_result = None
     carrot_response_result = None
 
@@ -637,7 +637,7 @@ def process_query(
         if "error" in result:
             continue
         method_name = result["method"]
-        if method_name == "CoRE":
+        if method_name == "R2-Router":
             core_response_result = result
         elif "CARROT" in method_name:
             carrot_response_result = result
@@ -645,12 +645,12 @@ def process_query(
     # Create side-by-side layout
     llm_responses_html = '<div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; margin: 15px 0;">'
 
-    # CoRE column
+    # R2-Router column
     if core_response_result:
         llm_responses_html += f"""
         <div style="background: white; border: 1px solid #e0e0e0; border-radius: 10px; padding: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
             <div style="font-size: 20px; font-weight: bold; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid #667eea;">
-                🎯 CoRE
+                🎯 R2-Router
             </div>
             <div style="margin-bottom: 15px;">
                 <div style="background: #f8f9fa; padding: 12px; border-radius: 5px; border-left: 3px solid #667eea; height: 120px; display: flex; flex-direction: column;">
@@ -929,7 +929,7 @@ def generate_results_html(
 
     <div class="results-container">
         <div class="header">
-            <h2>🤖 CoRE Router Results</h2>
+            <h2>🤖 R2-Router Results</h2>
             <p>Processed in {elapsed_time:.2f} seconds</p>
         </div>
 
@@ -942,66 +942,66 @@ def generate_results_html(
     # Now add the side-by-side comparison table (no detailed results, go directly to comparison)
     valid_results = [r for r in results if "error" not in r]
     if len(valid_results) >= 2:
-        # Assume we have CoRE and CARROT results
-        core_result = None
+        # Assume we have R2-Router and CARROT results
+        r2_result = None
         carrot_result = None
 
         for r in valid_results:
-            if r["method"] == "CoRE":
-                core_result = r
+            if r["method"] == "R2-Router":
+                r2_result = r
             elif "CARROT" in r["method"]:
                 carrot_result = r
 
-        if core_result and carrot_result:
+        if r2_result and carrot_result:
             html += f"""
                 <h3 style="text-align: center; color: #2c3e50; margin-top: 40px;">🔬 Method Comparison</h3>
                 <table style="width: 100%; border-collapse: collapse; margin-top: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                     <thead>
                         <tr style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
                             <th style="padding: 15px; text-align: left; border: 1px solid #ddd;">Metric</th>
-                            <th style="padding: 15px; text-align: center; border: 1px solid #ddd;">🎯 CoRE</th>
+                            <th style="padding: 15px; text-align: center; border: 1px solid #ddd;">🎯 R2-Router</th>
                             <th style="padding: 15px; text-align: center; border: 1px solid #ddd;">🥕 CARROT</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr style="background-color: #f8f9fa;">
                             <td style="padding: 12px; border: 1px solid #ddd; font-weight: bold;">Selected LLM</td>
-                            <td style="padding: 12px; border: 1px solid #ddd; text-align: center;">{core_result['llm_name']}</td>
+                            <td style="padding: 12px; border: 1px solid #ddd; text-align: center;">{r2_result['llm_name']}</td>
                             <td style="padding: 12px; border: 1px solid #ddd; text-align: center;">{carrot_result['llm_name']}</td>
                         </tr>
                         <tr>
                             <td style="padding: 12px; border: 1px solid #ddd; font-weight: bold;">Token Limit</td>
-                            <td style="padding: 12px; border: 1px solid #ddd; text-align: center;">{core_result['token_limit']}</td>
+                            <td style="padding: 12px; border: 1px solid #ddd; text-align: center;">{r2_result['token_limit']}</td>
                             <td style="padding: 12px; border: 1px solid #ddd; text-align: center;">{carrot_result['token_limit']}</td>
                         </tr>
                         <tr style="background-color: #f8f9fa;">
                             <td style="padding: 12px; border: 1px solid #ddd; font-weight: bold;">Predicted Quality</td>
-                            <td style="padding: 12px; border: 1px solid #ddd; text-align: center;">{core_result['predicted_score']:.3f}</td>
+                            <td style="padding: 12px; border: 1px solid #ddd; text-align: center;">{r2_result['predicted_score']:.3f}</td>
                             <td style="padding: 12px; border: 1px solid #ddd; text-align: center;">{carrot_result['predicted_score']:.3f}</td>
                         </tr>
                         <tr>
                             <td style="padding: 12px; border: 1px solid #ddd; font-weight: bold;">Actual Quality</td>
-                            <td style="padding: 12px; border: 1px solid #ddd; text-align: center; color: {'green' if core_result['actual_score'] >= 0.7 else 'orange' if core_result['actual_score'] >= 0.4 else 'red'}; font-weight: bold;">{core_result['actual_score']:.3f}</td>
+                            <td style="padding: 12px; border: 1px solid #ddd; text-align: center; color: {'green' if r2_result['actual_score'] >= 0.7 else 'orange' if r2_result['actual_score'] >= 0.4 else 'red'}; font-weight: bold;">{r2_result['actual_score']:.3f}</td>
                             <td style="padding: 12px; border: 1px solid #ddd; text-align: center; color: {'green' if carrot_result['actual_score'] >= 0.7 else 'orange' if carrot_result['actual_score'] >= 0.4 else 'red'}; font-weight: bold;">{carrot_result['actual_score']:.3f}</td>
                         </tr>
                         <tr style="background-color: #f8f9fa;">
                             <td style="padding: 12px; border: 1px solid #ddd; font-weight: bold;">Quality Error</td>
-                            <td style="padding: 12px; border: 1px solid #ddd; text-align: center;">{abs(core_result['actual_score'] - core_result['predicted_score']):.3f}</td>
+                            <td style="padding: 12px; border: 1px solid #ddd; text-align: center;">{abs(r2_result['actual_score'] - r2_result['predicted_score']):.3f}</td>
                             <td style="padding: 12px; border: 1px solid #ddd; text-align: center;">{abs(carrot_result['actual_score'] - carrot_result['predicted_score']):.3f}</td>
                         </tr>
                         <tr>
                             <td style="padding: 12px; border: 1px solid #ddd; font-weight: bold;">Predicted Cost</td>
-                            <td style="padding: 12px; border: 1px solid #ddd; text-align: center;">{core_result['predicted_cost']:.2f}</td>
+                            <td style="padding: 12px; border: 1px solid #ddd; text-align: center;">{r2_result['predicted_cost']:.2f}</td>
                             <td style="padding: 12px; border: 1px solid #ddd; text-align: center;">{carrot_result['predicted_cost']:.2f}</td>
                         </tr>
                         <tr style="background-color: #f8f9fa;">
                             <td style="padding: 12px; border: 1px solid #ddd; font-weight: bold;">Actual Cost</td>
-                            <td style="padding: 12px; border: 1px solid #ddd; text-align: center;">{core_result['actual_cost']:.2f}</td>
+                            <td style="padding: 12px; border: 1px solid #ddd; text-align: center;">{r2_result['actual_cost']:.2f}</td>
                             <td style="padding: 12px; border: 1px solid #ddd; text-align: center;">{carrot_result['actual_cost']:.2f}</td>
                         </tr>
                         <tr>
                             <td style="padding: 12px; border: 1px solid #ddd; font-weight: bold;">Cost-Effectiveness</td>
-                            <td style="padding: 12px; border: 1px solid #ddd; text-align: center; font-weight: bold;">{core_result['actual_score'] / core_result['actual_cost'] if core_result['actual_cost'] > 0 else 0:.4f}</td>
+                            <td style="padding: 12px; border: 1px solid #ddd; text-align: center; font-weight: bold;">{r2_result['actual_score'] / r2_result['actual_cost'] if r2_result['actual_cost'] > 0 else 0:.4f}</td>
                             <td style="padding: 12px; border: 1px solid #ddd; text-align: center; font-weight: bold;">{carrot_result['actual_score'] / carrot_result['actual_cost'] if carrot_result['actual_cost'] > 0 else 0:.4f}</td>
                         </tr>
                     </tbody>
@@ -1021,7 +1021,7 @@ def create_demo():
     """Create Gradio interface"""
 
     with gr.Blocks(
-        title="CoRE Router Demo",
+        title="R2-Router Demo",
         theme=gr.themes.Soft(),
         css="""
         html, body {
@@ -1039,7 +1039,7 @@ def create_demo():
         """
     ) as demo:
         gr.Markdown("""
-        # 🤖 CoRE Router Demo
+        # 🤖 R2-Router Demo
 
         <u>Co</u>rrelation-aware <u>R</u>outing <u>E</u>ngine against CARROT router baseline
         """)
@@ -1082,7 +1082,7 @@ def create_demo():
 
                 with gr.Row():
                     core_check = gr.Checkbox(
-                        label="CoRE",
+                        label="R2-Router",
                         value=True
                     )
                     carrot_check = gr.Checkbox(
@@ -1106,24 +1106,24 @@ def create_demo():
 
                 # Visualization plots
                 with gr.Row():
-                    core_plot = gr.Plot(label="CoRE: Cost-Quality Curves", visible=False)
+                    core_plot = gr.Plot(label="R2-Router: Cost-Quality Curves", visible=False)
                     carrot_plot = gr.Plot(label="CARROT: Cost-Quality Points", visible=False)
 
                 # Selection UI (both methods in one compact layout)
                 with gr.Column(visible=False) as selection_row:
                     gr.Markdown("### 🎯 Make Your Selections")
 
-                    # CoRE Selection - inline (LLM + Token Limit in one row)
-                    gr.Markdown("**CoRE Selection:** Choose LLM and token limit from the curves above")
+                    # R2-Router Selection - inline (LLM + Token Limit in one row)
+                    gr.Markdown("**R2-Router Selection:** Choose LLM and token limit from the curves above")
                     with gr.Row():
-                        core_llm_dropdown = gr.Dropdown(
-                            label="CoRE: LLM",
+                        r2_llm_dropdown = gr.Dropdown(
+                            label="R2-Router: LLM",
                             choices=list(config.LLM_POOL.keys()),
                             value=None,
                             scale=2
                         )
-                        core_token_dropdown = gr.Dropdown(
-                            label="CoRE: Token Limit",
+                        r2_token_dropdown = gr.Dropdown(
+                            label="R2-Router: Token Limit",
                             choices=["10", "20", "30", "40", "50", "80", "100", "150", "200", "300", "500", "800", "1200", "2000", "4000", "unlimited"],
                             value="unlimited",
                             scale=1
@@ -1157,9 +1157,9 @@ def create_demo():
 
         # Connect Visualize button
         def show_visualizations(query):
-            core_fig, carrot_fig = generate_visualizations(query)
+            r2_fig, carrot_fig = generate_visualizations(query)
             return {
-                core_plot: gr.update(value=core_fig, visible=True),
+                core_plot: gr.update(value=r2_fig, visible=True),
                 carrot_plot: gr.update(value=carrot_fig, visible=True),
                 selection_row: gr.update(visible=True)
             }
@@ -1171,36 +1171,36 @@ def create_demo():
         )
 
         # Connect single button to run both methods
-        def run_both_methods_and_compare(query, core_llm, core_token, carrot_llm, progress=gr.Progress()):
-            """Run both CoRE and CARROT selections with step-by-step progress, then display comparison table"""
+        def run_both_methods_and_compare(query, r2_llm, r2_token, carrot_llm, progress=gr.Progress()):
+            """Run both R2-Router and CARROT selections with step-by-step progress, then display comparison table"""
             if not query.strip():
                 return "<p style='color: red;'>Please enter a query!</p>", None
 
-            if not core_llm or not carrot_llm:
-                return "<p style='color: red;'>Please select LLMs for both CoRE and CARROT!</p>", None
+            if not r2_llm or not carrot_llm:
+                return "<p style='color: red;'>Please select LLMs for both R2-Router and CARROT!</p>", None
 
             # Step 1: Generate embedding
             progress(0.1, desc="Generating query embedding...")
             embedding = embedder.embed(query)
 
             # Step 2: Computing predictions
-            progress(0.2, desc=f"Computing predictions for CoRE ({core_llm}) and CARROT ({carrot_llm})...")
+            progress(0.2, desc=f"Computing predictions for R2-Router ({r2_llm}) and CARROT ({carrot_llm})...")
 
             # Get predictions (without running inference yet)
-            # CoRE predictions
-            predictor = core_router.predictors[core_llm]
-            llm_size = core_router.llm_pool[core_llm]["size"]
+            # R2-Router predictions
+            predictor = r2_router.predictors[r2_llm]
+            llm_size = r2_router.llm_pool[r2_llm]["size"]
             quality_limited, quality_unlimited, token_count_unlimited = predictor.predict(embedding)
             quality_limited = np.clip(quality_limited, 0, 1)
             quality_unlimited = np.clip(quality_unlimited, 0, 1)
             token_count_unlimited = np.maximum(token_count_unlimited, 0)
 
-            if core_token == "unlimited":
+            if r2_token == "unlimited":
                 core_pred_score = quality_unlimited[0]
                 core_pred_count = token_count_unlimited[0]
             else:
-                token_limit_int = int(core_token)
-                limited_token_limits = [t for t in core_router.token_limits if t != "unlimited"]
+                token_limit_int = int(r2_token)
+                limited_token_limits = [t for t in r2_router.token_limits if t != "unlimited"]
                 token_idx = limited_token_limits.index(token_limit_int)
                 core_pred_score = quality_limited[0, token_idx]
                 core_pred_count = min(token_limit_int, token_count_unlimited[0])
@@ -1236,10 +1236,10 @@ def create_demo():
             print(f"Extracted: score={carrot_pred_score:.3f}, count={carrot_pred_count:.1f}, cost={carrot_pred_cost:.1f}")
             print(f"{'='*60}\n")
 
-            # Step 3: Calling CoRE LLM
-            progress(0.4, desc=f"Querying CoRE LLM ({core_llm} @ {core_token})...")
-            core_response, core_tokens, core_actual_prompt = llm_client.call_llm_by_name(core_llm, query, core_token)
-            core_actual_cost = core_tokens * llm_size
+            # Step 3: Calling R2-Router LLM
+            progress(0.4, desc=f"Querying R2-Router LLM ({r2_llm} @ {r2_token})...")
+            core_response, r2_tokens, r2_actual_prompt = llm_client.call_llm_by_name(r2_llm, query, r2_token)
+            r2_actual_cost = r2_tokens * llm_size
 
             # Step 4: Calling CARROT LLM
             progress(0.6, desc=f"Querying CARROT LLM ({carrot_llm} @ unlimited)...")
@@ -1256,19 +1256,19 @@ def create_demo():
             # Calculate metrics
             core_score_error = abs(core_pred_score - core_score)
             carrot_score_error = abs(carrot_pred_score - carrot_score)
-            core_cost_effectiveness = core_score / core_actual_cost if core_actual_cost > 0 else 0
+            r2_cost_effectiveness = core_score / r2_actual_cost if r2_actual_cost > 0 else 0
             carrot_cost_effectiveness = carrot_score / carrot_actual_cost if carrot_actual_cost > 0 else 0
 
             # Package results
-            core_result = {
-                'llm_name': core_llm,
-                'token_limit': core_token,
+            r2_result = {
+                'llm_name': r2_llm,
+                'token_limit': r2_token,
                 'predicted_score': float(core_pred_score),
                 'predicted_cost': float(core_pred_cost),
                 'actual_score': float(core_score),
-                'actual_cost': float(core_actual_cost),
+                'actual_cost': float(r2_actual_cost),
                 'score_error': float(core_score_error),
-                'cost_effectiveness': float(core_cost_effectiveness),
+                'cost_effectiveness': float(r2_cost_effectiveness),
                 'response': core_response,
                 'judge_feedback': core_feedback
             }
@@ -1286,11 +1286,11 @@ def create_demo():
                 'judge_feedback': carrot_feedback
             }
 
-            # Format the CoRE input with highlighted instructional prompt
-            core_input_html_viz = format_prompt_with_highlight(
+            # Format the R2-Router input with highlighted instructional prompt
+            r2_input_html_viz = format_prompt_with_highlight(
                 query,
-                core_actual_prompt,
-                str(core_token)
+                r2_actual_prompt,
+                str(r2_token)
             )
 
             # Final: Build comparison table with card-style selections (side-by-side)
@@ -1301,16 +1301,16 @@ def create_demo():
                 <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; margin: 15px 0;">
                     <div style="background: white; border: 1px solid #e0e0e0; border-radius: 10px; padding: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                         <div style="font-size: 20px; font-weight: bold; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid #667eea;">
-                            🎯 CoRE
+                            🎯 R2-Router
                         </div>
                         <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin: 15px 0;">
                             <div style="background: #f8f9fa; padding: 12px; border-radius: 5px; border-left: 3px solid #667eea;">
                                 <div style="font-size: 12px; color: #666; text-transform: uppercase;">Selected LLM</div>
-                                <div style="font-size: 16px; font-weight: bold; color: #333; margin-top: 5px;">{core_result['llm_name']}</div>
+                                <div style="font-size: 16px; font-weight: bold; color: #333; margin-top: 5px;">{r2_result['llm_name']}</div>
                             </div>
                             <div style="background: #f8f9fa; padding: 12px; border-radius: 5px; border-left: 3px solid #667eea;">
                                 <div style="font-size: 12px; color: #666; text-transform: uppercase;">Token Number</div>
-                                <div style="font-size: 16px; font-weight: bold; color: #333; margin-top: 5px;">{core_result['token_limit']}</div>
+                                <div style="font-size: 16px; font-weight: bold; color: #333; margin-top: 5px;">{r2_result['token_limit']}</div>
                             </div>
                         </div>
                     </div>
@@ -1340,49 +1340,49 @@ def create_demo():
                     <thead>
                         <tr style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
                             <th style="padding: 15px; text-align: left; border: 1px solid #ddd;">Metric</th>
-                            <th style="padding: 15px; text-align: center; border: 1px solid #ddd;">🎯 CoRE</th>
+                            <th style="padding: 15px; text-align: center; border: 1px solid #ddd;">🎯 R2-Router</th>
                             <th style="padding: 15px; text-align: center; border: 1px solid #ddd;">🥕 CARROT</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr style="background-color: #f8f9fa;">
                             <td style="padding: 12px; border: 1px solid #ddd; font-weight: bold;">Selected LLM</td>
-                            <td style="padding: 12px; border: 1px solid #ddd; text-align: center;">{core_result['llm_name']}</td>
+                            <td style="padding: 12px; border: 1px solid #ddd; text-align: center;">{r2_result['llm_name']}</td>
                             <td style="padding: 12px; border: 1px solid #ddd; text-align: center;">{carrot_result['llm_name']}</td>
                         </tr>
                         <tr>
                             <td style="padding: 12px; border: 1px solid #ddd; font-weight: bold;">Token Limit</td>
-                            <td style="padding: 12px; border: 1px solid #ddd; text-align: center;">{core_result['token_limit']}</td>
+                            <td style="padding: 12px; border: 1px solid #ddd; text-align: center;">{r2_result['token_limit']}</td>
                             <td style="padding: 12px; border: 1px solid #ddd; text-align: center;">{carrot_result['token_limit']}</td>
                         </tr>
                         <tr style="background-color: #f8f9fa;">
                             <td style="padding: 12px; border: 1px solid #ddd; font-weight: bold;">Predicted Quality</td>
-                            <td style="padding: 12px; border: 1px solid #ddd; text-align: center;">{core_result['predicted_score']:.3f}</td>
+                            <td style="padding: 12px; border: 1px solid #ddd; text-align: center;">{r2_result['predicted_score']:.3f}</td>
                             <td style="padding: 12px; border: 1px solid #ddd; text-align: center;">{carrot_result['predicted_score']:.3f}</td>
                         </tr>
                         <tr>
                             <td style="padding: 12px; border: 1px solid #ddd; font-weight: bold;">Actual Quality</td>
-                            <td style="padding: 12px; border: 1px solid #ddd; text-align: center; color: {'green' if core_result['actual_score'] >= 0.7 else 'orange' if core_result['actual_score'] >= 0.4 else 'red'}; font-weight: bold;">{core_result['actual_score']:.3f}</td>
+                            <td style="padding: 12px; border: 1px solid #ddd; text-align: center; color: {'green' if r2_result['actual_score'] >= 0.7 else 'orange' if r2_result['actual_score'] >= 0.4 else 'red'}; font-weight: bold;">{r2_result['actual_score']:.3f}</td>
                             <td style="padding: 12px; border: 1px solid #ddd; text-align: center; color: {'green' if carrot_result['actual_score'] >= 0.7 else 'orange' if carrot_result['actual_score'] >= 0.4 else 'red'}; font-weight: bold;">{carrot_result['actual_score']:.3f}</td>
                         </tr>
                         <tr style="background-color: #f8f9fa;">
                             <td style="padding: 12px; border: 1px solid #ddd; font-weight: bold;">Quality Error</td>
-                            <td style="padding: 12px; border: 1px solid #ddd; text-align: center;">{core_result['score_error']:.3f}</td>
+                            <td style="padding: 12px; border: 1px solid #ddd; text-align: center;">{r2_result['score_error']:.3f}</td>
                             <td style="padding: 12px; border: 1px solid #ddd; text-align: center;">{carrot_result['score_error']:.3f}</td>
                         </tr>
                         <tr>
                             <td style="padding: 12px; border: 1px solid #ddd; font-weight: bold;">Predicted Cost</td>
-                            <td style="padding: 12px; border: 1px solid #ddd; text-align: center;">{core_result['predicted_cost']:.2f}</td>
+                            <td style="padding: 12px; border: 1px solid #ddd; text-align: center;">{r2_result['predicted_cost']:.2f}</td>
                             <td style="padding: 12px; border: 1px solid #ddd; text-align: center;">{carrot_result['predicted_cost']:.2f}</td>
                         </tr>
                         <tr style="background-color: #f8f9fa;">
                             <td style="padding: 12px; border: 1px solid #ddd; font-weight: bold;">Actual Cost</td>
-                            <td style="padding: 12px; border: 1px solid #ddd; text-align: center;">{core_result['actual_cost']:.2f}</td>
+                            <td style="padding: 12px; border: 1px solid #ddd; text-align: center;">{r2_result['actual_cost']:.2f}</td>
                             <td style="padding: 12px; border: 1px solid #ddd; text-align: center;">{carrot_result['actual_cost']:.2f}</td>
                         </tr>
                         <tr>
                             <td style="padding: 12px; border: 1px solid #ddd; font-weight: bold;">Cost-Effectiveness</td>
-                            <td style="padding: 12px; border: 1px solid #ddd; text-align: center; font-weight: bold;">{core_result['cost_effectiveness']:.4f}</td>
+                            <td style="padding: 12px; border: 1px solid #ddd; text-align: center; font-weight: bold;">{r2_result['cost_effectiveness']:.4f}</td>
                             <td style="padding: 12px; border: 1px solid #ddd; text-align: center; font-weight: bold;">{carrot_result['cost_effectiveness']:.4f}</td>
                         </tr>
                     </tbody>
@@ -1393,34 +1393,34 @@ def create_demo():
                 <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; margin: 15px 0;">
                     <div style="background: white; border: 1px solid #e0e0e0; border-radius: 10px; padding: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                         <div style="font-size: 20px; font-weight: bold; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid #667eea;">
-                            🎯 CoRE
+                            🎯 R2-Router
                         </div>
                         <div style="margin-bottom: 15px;">
                             <div style="background: #f8f9fa; padding: 12px; border-radius: 5px; border-left: 3px solid #667eea; height: 120px; display: flex; flex-direction: column;">
                                 <div style="font-size: 12px; color: #666; text-transform: uppercase; margin-bottom: 8px;">
                                     <span style="text-decoration: underline; text-decoration-color: red; text-decoration-thickness: 2px;">Output</span>
                                 </div>
-                                <div style="font-size: 14px; color: #333; font-family: monospace; white-space: pre-wrap; overflow-y: auto; flex: 1;">{core_result['response']}</div>
+                                <div style="font-size: 14px; color: #333; font-family: monospace; white-space: pre-wrap; overflow-y: auto; flex: 1;">{r2_result['response']}</div>
                             </div>
                         </div>
                         <div style="margin-bottom: 15px;">
                             <div style="background: #e8f5e9; padding: 12px; border-radius: 5px; border-left: 4px solid #4caf50; height: 100px; display: flex; flex-direction: column;">
                                 <div style="font-size: 12px; color: #2e7d32; font-weight: bold; margin-bottom: 8px;">Judge Feedback</div>
-                                <div style="font-size: 14px; color: #333; overflow-y: auto; flex: 1;">{core_result['judge_feedback']}</div>
+                                <div style="font-size: 14px; color: #333; overflow-y: auto; flex: 1;">{r2_result['judge_feedback']}</div>
                             </div>
                         </div>
                         <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
                             <div style="background: #f8f9fa; padding: 10px; border-radius: 5px; border-left: 3px solid #667eea;">
                                 <div style="font-size: 11px; color: #666; text-transform: uppercase;">Actual Quality</div>
-                                <div style="font-size: 16px; font-weight: bold; color: #333; margin-top: 3px;">{core_result['actual_score']:.3f}</div>
+                                <div style="font-size: 16px; font-weight: bold; color: #333; margin-top: 3px;">{r2_result['actual_score']:.3f}</div>
                             </div>
                             <div style="background: #f8f9fa; padding: 10px; border-radius: 5px; border-left: 3px solid #667eea;">
                                 <div style="font-size: 11px; color: #666; text-transform: uppercase;">Actual Tokens</div>
-                                <div style="font-size: 16px; font-weight: bold; color: #333; margin-top: 3px;">{core_tokens}</div>
+                                <div style="font-size: 16px; font-weight: bold; color: #333; margin-top: 3px;">{r2_tokens}</div>
                             </div>
                             <div style="background: #f8f9fa; padding: 10px; border-radius: 5px; border-left: 3px solid #667eea;">
                                 <div style="font-size: 11px; color: #666; text-transform: uppercase;">Actual Cost</div>
-                                <div style="font-size: 16px; font-weight: bold; color: #333; margin-top: 3px;">{core_result['actual_cost']:.2f}</div>
+                                <div style="font-size: 16px; font-weight: bold; color: #333; margin-top: 3px;">{r2_result['actual_cost']:.2f}</div>
                             </div>
                         </div>
                     </div>
@@ -1464,14 +1464,14 @@ def create_demo():
 
             # Add Result Analysis
             progress(0.95, desc="Generating results visualization...")
-            result_analysis_fig = generate_result_analysis(core_result, carrot_result)
+            result_analysis_fig = generate_result_analysis(r2_result, carrot_result)
 
             progress(1.0, desc="Done!")
             return html, result_analysis_fig
 
         run_both_btn.click(
             fn=run_both_methods_and_compare,
-            inputs=[query_input, core_llm_dropdown, core_token_dropdown, carrot_llm_dropdown],
+            inputs=[query_input, r2_llm_dropdown, r2_token_dropdown, carrot_llm_dropdown],
             outputs=[visualized_results, visualized_analysis_plot]
         )
 

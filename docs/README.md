@@ -1,6 +1,6 @@
 # Documentation Organization
 
-This directory contains organized documentation for the CoRE Router project.
+This directory contains organized documentation for the R2-Router project.
 
 ## Structure
 

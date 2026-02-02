@@ -2,7 +2,7 @@
 
 ## What Was Wrong
 
-The demo was showing **predicted risk** (based on predicted score/cost) instead of **actual risk** (based on actual score/cost from judge evaluation). Trophy was awarded incorrectly.
+The demo was showing **predicted risk** (based on predicted sr2/cost) instead of **actual risk** (based on actual sr2/cost from judge evaluation). Trophy was awarded incorrectly.
 
 ## What Changed
 
@@ -59,7 +59,7 @@ Actual Risk = (1 - λ) × actual_score - λ × actual_cost
 
 ## Why This Matters
 
-- **Before**: CoRE could win with predicted_risk=0.8 but actual_risk=0.3 (bad execution)
+- **Before**: R2-Router could win with predicted_risk=0.8 but actual_risk=0.3 (bad execution)
 - **After**: Winner is the method that actually performed best according to the judge
 
 ---

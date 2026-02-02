@@ -1,6 +1,6 @@
-# CoRE Router - Public Deployment Guide
+# R2-Router - Public Deployment Guide
 
-This guide explains how to deploy CoRE Router with public access using your local GPU.
+This guide explains how to deploy R2-Router with public access using your local GPU.
 
 ## 🎯 Architecture
 

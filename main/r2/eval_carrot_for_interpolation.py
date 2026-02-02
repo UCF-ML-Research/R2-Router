@@ -3,7 +3,7 @@
 Evaluate CARROT baselines for interpolation experiment comparison.
 
 Note: CARROT only routes among LLMs with unlimited tokens,
-while CoRE routes among (LLM, token_limit) pairs.
+while R2-Router routes among (LLM, token_limit) pairs.
 """
 
 import sys
@@ -40,7 +40,7 @@ def main():
     print("CARROT Baseline Evaluation for Interpolation Experiment")
     print("=" * 80)
     print("\nNote: CARROT routes among LLMs (unlimited tokens only)")
-    print("      CoRE routes among (LLM, token_limit) pairs")
+    print("      R2-Router routes among (LLM, token_limit) pairs")
 
     # Initialize dataset manager
     dataset_manager = DatasetManager(

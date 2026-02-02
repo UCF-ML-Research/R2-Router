@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Train LGBM-based CoRE predictors and compare with main experiment baselines.
+Train LGBM-based R2-Router predictors and compare with main experiment baselines.
 This is a predictor architecture ablation study.
 """
 
@@ -86,7 +86,7 @@ def route_baseline(Y_hat_score, Y_hat_count, quality_test, token_count_test, lam
 
 def route_rf_core(predictors_dict, models, embedding_test, lambda_range,
                   quality_test_dict, token_count_test_dict, token_limits_score, token_limits_count):
-    """Route using RandomForest CoRE predictors."""
+    """Route using RandomForest R2-Router predictors."""
     costs_list = []
     perfs_list = []
 
@@ -135,7 +135,7 @@ def route_rf_core(predictors_dict, models, embedding_test, lambda_range,
 def main():
     """Main training and evaluation pipeline."""
     print("=" * 80)
-    print("Predictor Ablation: RandomForest-based CoRE vs Main Baselines")
+    print("Predictor Ablation: RandomForest-based R2-Router vs Main Baselines")
     print("=" * 80)
 
     # Initialize dataset manager
@@ -175,9 +175,9 @@ def main():
     # Lambda range for routing
     lambda_range = np.linspace(0, 1e-4, 100)
 
-    # Train RandomForest CoRE predictors
+    # Train RandomForest R2-Router predictors
     print("\n" + "=" * 80)
-    print("Training RandomForest CoRE Predictors")
+    print("Training RandomForest R2-Router Predictors")
     print("=" * 80)
 
     rf_predictors = {}
@@ -187,7 +187,7 @@ def main():
     checkpoint_dir = 'ablation/checkpoints_rf'
     os.makedirs(checkpoint_dir, exist_ok=True)
 
-    for model_name, model_size, csv_path in tqdm(models, desc="Training RF CoRE"):
+    for model_name, model_size, csv_path in tqdm(models, desc="Training RF R2-Router"):
         model_checkpoint = os.path.join(checkpoint_dir, model_name)
 
         # Check if already trained
@@ -230,9 +230,9 @@ def main():
         quality_test_dict[model_name] = {t: df.loc[test_idx, t].values for t in token_limits_score}
         token_count_test_dict[model_name] = {t: df.loc[test_idx, t].values for t in token_limits_count}
 
-    # Evaluate RandomForest CoRE
+    # Evaluate RandomForest R2-Router
     print("\n" + "=" * 80)
-    print("Evaluating RandomForest CoRE")
+    print("Evaluating RandomForest R2-Router")
     print("=" * 80)
 
     rf_costs, rf_perfs = route_rf_core(
@@ -242,7 +242,7 @@ def main():
     rf_audc = compute_audc(rf_costs, rf_perfs)
     rf_peak = rf_perfs.max()
 
-    print(f"RandomForest CoRE - AUDC: {rf_audc:.4f}, Peak: {rf_peak:.4f}")
+    print(f"RandomForest R2-Router - AUDC: {rf_audc:.4f}, Peak: {rf_peak:.4f}")
 
     # Load and evaluate main experiment baselines
     print("\n" + "=" * 80)
@@ -358,14 +358,14 @@ def main():
 
     if mirt_qnc is not None:
         results = {
-            'Method': ['CoRE-RF', 'CARROT-Linear', 'MIRT'],
+            'Method': ['R2-Router-RF', 'CARROT-Linear', 'MIRT'],
             'AUDC': [rf_audc, carrot_audc, mirt_audc],
             'QNC': [rf_qnc, carrot_qnc, mirt_qnc],
             'Peak_Accuracy': [rf_peak, carrot_peak, mirt_peak]
         }
     else:
         results = {
-            'Method': ['CoRE-RF', 'CARROT-Linear'],
+            'Method': ['R2-Router-RF', 'CARROT-Linear'],
             'AUDC': [rf_audc, carrot_audc],
             'QNC': [rf_qnc, carrot_qnc],
             'Peak_Accuracy': [rf_peak, carrot_peak]
@@ -384,7 +384,7 @@ def main():
     curves_data = []
     for i, lam in enumerate(lambda_range):
         curves_data.append({
-            'method': 'CoRE-RF',
+            'method': 'R2-Router-RF',
             'lambda': lam,
             'cost': rf_costs[i],
             'performance': rf_perfs[i]

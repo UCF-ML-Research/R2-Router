@@ -1,8 +1,8 @@
 #!/bin/bash
-# Quick start script for CoRE Router Demo
+# Quick start script for R2-Router Demo
 
 echo "=================================="
-echo "CoRE Router Demo - Quick Start"
+echo "R2-Router Demo - Quick Start"
 echo "=================================="
 echo ""
 
@@ -59,7 +59,7 @@ fi
 
 echo ""
 echo "=================================="
-echo "Starting CoRE Router Demo..."
+echo "Starting R2-Router Demo..."
 echo "=================================="
 echo ""
 

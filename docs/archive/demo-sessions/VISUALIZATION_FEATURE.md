@@ -2,14 +2,14 @@
 
 ## Summary
 
-Added interactive Plotly visualizations showing cost-quality tradeoffs for CoRE and CARROT routing methods. Users can visualize how different LLMs and token limits perform on their query.
+Added interactive Plotly visualizations showing cost-quality tradeoffs for R2-Router and CARROT routing methods. Users can visualize how different LLMs and token limits perform on their query.
 
 ## New Files
 
 ### `demo/visualizer.py`
 Complete visualization module with three main functions:
 
-1. **`generate_core_visualization()`**: Creates cost-quality curves for CoRE
+1. **`generate_r2_visualization()`**: Creates cost-quality curves for R2-Router
    - One curve per LLM showing quality across all token limits
    - X-axis: Predicted Cost (tokens × model size)
    - Y-axis: Predicted Quality Score (0-1)
@@ -22,7 +22,7 @@ Complete visualization module with three main functions:
    - X-axis: Predicted Cost
    - Y-axis: Predicted Quality Score
    - Points labeled with LLM names
-   - Interactive hover shows same info as CoRE
+   - Interactive hover shows same info as R2-Router
 
 3. **`generate_combined_visualization()`**: Helper to generate both
 
@@ -34,20 +34,20 @@ Complete visualization module with three main functions:
 
 1. **Import statement** (line 26):
    ```python
-   from visualizer import generate_core_visualization, generate_carrot_visualization
+   from visualizer import generate_r2_visualization, generate_carrot_visualization
    ```
 
 2. **New function `generate_visualizations()`** (lines 69-104):
    - Takes query and budget as input
    - Generates embedding
-   - Creates visualizations for CoRE and both CARROT variants
-   - Returns tuple of (core_fig, carrot_knn_fig, carrot_linear_fig)
+   - Creates visualizations for R2-Router and both CARROT variants
+   - Returns tuple of (r2_fig, carrot_knn_fig, carrot_linear_fig)
 
 3. **Updated Gradio UI** (lines 606-661):
    - Added "📊 Visualize Predictions" button
    - Added tabs: "📊 Visualizations" and "🎯 Routing Results"
    - Visualization tab shows:
-     - One large CoRE plot (full width)
+     - One large R2-Router plot (full width)
      - Two CARROT plots side-by-side (KNN and Linear)
    - Wired button to call `generate_visualizations()`
 
@@ -59,14 +59,14 @@ Complete visualization module with three main functions:
 ┌─────────────────────────────────────────────────────────┐
 │  Query Input                                            │
 │  Lambda Slider | Budget Input                          │
-│  [✓] CoRE  [✓] CARROT-KNN  [ ] CARROT-Linear          │
+│  [✓] R2-Router  [✓] CARROT-KNN  [ ] CARROT-Linear          │
 │  [🚀 Route Query]  [📊 Visualize Predictions]          │
 └─────────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────┐
 │ [📊 Visualizations] [🎯 Routing Results]                │
 │                                                          │
-│  CoRE: Cost-Quality Curves                              │
+│  R2-Router: Cost-Quality Curves                              │
 │  ┌────────────────────────────────────────────┐         │
 │  │    [Interactive Plotly chart]              │         │
 │  │    Multiple curves, one per LLM            │         │
@@ -81,7 +81,7 @@ Complete visualization module with three main functions:
 └─────────────────────────────────────────────────────────┘
 ```
 
-### CoRE Visualization Features
+### R2-Router Visualization Features
 
 **Curves for Each LLM:**
 - Each LLM has a different colored curve
@@ -158,14 +158,14 @@ Quality
 2. Click "📊 Visualize Predictions"
 3. `generate_visualizations()` called:
    - Embeds query using embedder
-   - For CoRE: Gets predictions from all predictors for all token limits
+   - For R2-Router: Gets predictions from all predictors for all token limits
    - For CARROT: Gets predictions for unlimited setting only
    - Creates Plotly figures with interactive features
 4. Figures displayed in Gradio Plot components
 
 ### Prediction Data
 
-**CoRE predictions for each LLM:**
+**R2-Router predictions for each LLM:**
 ```python
 quality_limited: (1, 15)  # 15 limited token limits
 quality_unlimited: (1,)   # unlimited
@@ -197,7 +197,7 @@ where:
 - Y-axis range: [0, 1] (quality is always 0-1)
 - Hover mode: closest point
 
-**CoRE-specific:**
+**R2-Router-specific:**
 - Mode: `lines+markers` (connected curves)
 - Line width: 2px
 - Marker size: 8px
@@ -212,11 +212,11 @@ where:
 ## Benefits
 
 ✅ **Visual Understanding**: See cost-quality tradeoffs at a glance
-✅ **CoRE vs CARROT Comparison**: Curves vs points clearly show architectural difference
+✅ **R2-Router vs CARROT Comparison**: Curves vs points clearly show architectural difference
 ✅ **Budget Constraints**: Vertical line shows feasible region
 ✅ **Interactive Exploration**: Hover, zoom, pan to explore predictions
 ✅ **Per-Query Predictions**: Visualizes how predictions change for different queries
-✅ **Token Limit Impact**: See how quality changes with token limits (CoRE only)
+✅ **Token Limit Impact**: See how quality changes with token limits (R2-Router only)
 ✅ **LLM Comparison**: Easily compare different LLMs' cost-quality profiles
 
 ## Usage Example
@@ -225,7 +225,7 @@ where:
 2. Set budget: 100 (optional)
 3. Click "📊 Visualize Predictions"
 4. Observe:
-   - **CoRE**: Multiple curves showing tradeoffs
+   - **R2-Router**: Multiple curves showing tradeoffs
      - Cheap LLMs: Low cost, low quality
      - Expensive LLMs: High cost, high quality
      - Token limits: More tokens = higher cost, potentially better quality
@@ -239,7 +239,7 @@ where:
 
 This visualization helps understand:
 
-1. **CoRE's advantage**: Can operate across the cost-quality spectrum via token limits
+1. **R2-Router's advantage**: Can operate across the cost-quality spectrum via token limits
 2. **CARROT's limitation**: Fixed unlimited setting per LLM, no flexibility
 3. **LLM characteristics**: Some LLMs offer better quality/cost ratio
 4. **Query dependence**: Predictions change based on query complexity

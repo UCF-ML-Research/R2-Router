@@ -1,13 +1,13 @@
 # Final Session Summary - All Improvements
 
-This document summarizes all improvements made to the CoRE Router Demo in this complete session.
+This document summarizes all improvements made to the R2-Router Demo in this complete session.
 
 ---
 
 ## Change 1: Input Prompt Display with Highlighted Instructions
 
 ### Request
-*"Because for CoRE, we insert an instructional prompt to let LLM generate token number under certain limits, please also add a frame for input of CoRE and CARROT and highlight the instructional prompt"*
+*"Because for R2-Router, we insert an instructional prompt to let LLM generate token number under certain limits, please also add a frame for input of R2-Router and CARROT and highlight the instructional prompt"*
 
 ### Files Modified
 - **`demo/llm_client.py`** (lines 120-165, 233-273)
@@ -71,7 +71,7 @@ Then corrected to:
 ## Change 3: Interactive Cost-Quality Visualizations
 
 ### Request
-*"Then I want to draw two figures for CoRE and CARROT respectively. For CoRE, you can draw curves for each LLM, and let the user to select the budget (a vertical line on x-axis), and then select LLM by click the curve. For CARROT, you can draw point for each LLM, and let the user to select LLM by click the point. The x-axis is predicted cost, y-axis is predicted quality"*
+*"Then I want to draw two figures for R2-Router and CARROT respectively. For R2-Router, you can draw curves for each LLM, and let the user to select the budget (a vertical line on x-axis), and then select LLM by click the curve. For CARROT, you can draw point for each LLM, and let the user to select LLM by click the point. The x-axis is predicted cost, y-axis is predicted quality"*
 
 ### New Files Created
 - **`demo/visualizer.py`** - Complete visualization module
@@ -82,7 +82,7 @@ Then corrected to:
 ### What Added
 
 #### New Module: `demo/visualizer.py`
-1. **`generate_core_visualization()`**
+1. **`generate_r2_visualization()`**
    - Generates cost-quality curves for each LLM
    - One curve per LLM across 16 token limits (10 to unlimited)
    - X-axis: Predicted Cost (tokens × size)
@@ -93,21 +93,21 @@ Then corrected to:
 2. **`generate_carrot_visualization()`**
    - Generates cost-quality points for each LLM
    - One point per LLM (unlimited only - CARROT architecture)
-   - Same axes as CoRE
+   - Same axes as R2-Router
    - Points labeled with LLM names
-   - Same interactivity as CoRE
+   - Same interactivity as R2-Router
 
 #### Updated Demo UI
 1. Added "📊 Visualize Predictions" button
 2. Created tabs: "📊 Visualizations" and "🎯 Routing Results"
 3. Visualization tab shows:
-   - Large CoRE plot (full width)
+   - Large R2-Router plot (full width)
    - Two CARROT plots side-by-side (KNN and Linear)
 4. New function `generate_visualizations()` to create all plots
 
 ### Visual Features
 
-**CoRE Visualization:**
+**R2-Router Visualization:**
 ```
 Quality (0-1)
     ↑
@@ -189,7 +189,7 @@ Quality (0-1)
 ### Transparency
 ✅ Users see exact prompt sent to LLM
 ✅ Instructional prompts highlighted in yellow
-✅ Visual distinction between CoRE and CARROT approaches
+✅ Visual distinction between R2-Router and CARROT approaches
 
 ### Fairness
 ✅ Winner based on routing decision quality (predicted risk)
@@ -198,9 +198,9 @@ Quality (0-1)
 
 ### Understanding
 ✅ Interactive visualizations show cost-quality tradeoffs
-✅ CoRE curves vs CARROT points clearly show architectural difference
+✅ R2-Router curves vs CARROT points clearly show architectural difference
 ✅ Budget constraints visualized as vertical line
-✅ Token limit impact visible on CoRE curves
+✅ Token limit impact visible on R2-Router curves
 
 ### Research Value
 ✅ Ground truth metrics for analysis (actual risk still shown)
@@ -225,7 +225,7 @@ Quality (0-1)
 
 3. **Visualizations**
    - Click "📊 Visualize Predictions" button
-   - Verify CoRE shows curves with multiple points per LLM
+   - Verify R2-Router shows curves with multiple points per LLM
    - Verify CARROT shows single points per LLM
    - Test with budget → should see red vertical line
    - Test hover, zoom, pan interactions
@@ -252,7 +252,7 @@ Quality (0-1)
 ### After These Changes
 - Full transparency: prompts displayed with highlighting
 - Winner based on predicted risk (fair routing comparison)
-- Interactive visualizations: curves for CoRE, points for CARROT
+- Interactive visualizations: curves for R2-Router, points for CARROT
 - Predicted risk shown (routing decision quality)
 
 ---
@@ -264,7 +264,7 @@ Quality (0-1)
 3. **Visualize** → Click "📊 Visualize Predictions" to see cost-quality plots
    - Understand predictions before routing
    - See budget constraints
-   - Compare CoRE vs CARROT architectures
+   - Compare R2-Router vs CARROT architectures
 4. **Route** → Click "🚀 Route Query" to execute routing
    - See which method won (highest predicted risk)
    - See actual prompt sent (with highlighted instructions)

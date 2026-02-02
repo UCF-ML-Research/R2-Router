@@ -1,4 +1,4 @@
-"""Compare CoRE vs CARROT baselines."""
+"""Compare R2-Router vs CARROT baselines."""
 
 import argparse
 import os
@@ -7,14 +7,14 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from ..shared.dataset_manager import DatasetManager
 from ..shared.llm_loader import load_llm
-from ..core.predictor_sklearn import TokenPerformancePredictor
-from ..core.predictor import route_scores
+from ..r2.predictor_sklearn import TokenPerformancePredictor
+from ..r2.predictor import route_scores
 from ..baselines.carrot.baselines_carrot import CarrotKNNBaseline, CarrotLinearBaseline, route_baseline
 from ..baselines.irt.baselines_irt import IRTBaseline, NIRTBaseline
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description='Compare CoRE vs CARROT')
+    parser = argparse.ArgumentParser(description='Compare R2-Router vs CARROT')
     parser.add_argument('--model', action='append', nargs=4,
                         metavar=('NAME', 'SIZE', 'CSV', 'CHECKPOINT'),
                         help='Model configuration: name size csv_path checkpoint_path')
@@ -210,8 +210,8 @@ def main():
     embeddings = dataset_manager.get_embeddings()
     train_idx, test_idx = dataset_manager.get_split_indices()
 
-    # Load CoRE models
-    print("\nLoading CoRE models...")
+    # Load R2-Router models
+    print("\nLoading R2-Router models...")
     print(f"Attempting to load {len(args.model)} models...")
     llms = {}
     for name, size, csv_path, checkpoint in args.model:
@@ -259,19 +259,19 @@ def main():
             print(f"[ERROR] Failed to load {name}: {e}")
             continue
 
-    print(f"\n[OK] Loaded {len(llms)} CoRE models")
+    print(f"\n[OK] Loaded {len(llms)} R2-Router models")
 
     if len(llms) == 0:
-        print("\n[ERROR] No CoRE models were loaded!")
+        print("\n[ERROR] No R2-Router models were loaded!")
         print("Please check that:")
-        print("  1. CoRE models have been trained (Step 1 completed)")
+        print("  1. R2-Router models have been trained (Step 1 completed)")
         print("  2. Checkpoint paths are correct")
         print("  3. CSV files exist")
         exit(1)
 
-    # Route with CoRE
-    print("\nRouting with CoRE...")
-    core_cost, core_perf = route_scores(llms, LAMBDA_RANGE)
+    # Route with R2-Router
+    print("\nRouting with R2-Router...")
+    r2_cost, core_perf = route_scores(llms, LAMBDA_RANGE)
 
     # Load and route with CARROT
     print("\nLoading CARROT models...")
@@ -349,7 +349,7 @@ def main():
     os.makedirs("./comparison_results/main", exist_ok=True)
     data = []
     methods_to_save = [
-        ('CoRE', core_cost, core_perf),
+        ('R2-Router', r2_cost, core_perf),
         ('CARROT-KNN', carrot_knn_cost, carrot_knn_perf),
         ('CARROT-Linear', carrot_linear_cost, carrot_linear_perf),
         ('Oracle (Unlimited)', oracle_unlimited_cost, oracle_unlimited_perf),
@@ -378,8 +378,8 @@ def main():
                 'performance': p
             })
     df = pd.DataFrame(data)
-    df.to_csv("./comparison_results/main/core_vs_baselines_curves.csv", index=False)
-    print("[OK] Saved CSV: ./comparison_results/main/core_vs_baselines_curves.csv")
+    df.to_csv("./comparison_results/main/r2_vs_baselines_curves.csv", index=False)
+    print("[OK] Saved CSV: ./comparison_results/main/r2_vs_baselines_curves.csv")
 
     # Plot
     print("\nGenerating plot...")
@@ -387,7 +387,7 @@ def main():
     colors = plt.cm.tab10.colors
     ax.plot(oracle_unlimited_cost, oracle_unlimited_perf, '-', label="Oracle (Unlimited)", linewidth=2.5, color="red", alpha=0.8)
     ax.plot(oracle_all_cost, oracle_all_perf, '-', label="Oracle (All Limits)", linewidth=2.5, color="brown", alpha=0.8)
-    ax.plot(core_cost, core_perf, '-', label="CoRE (Our Method)", linewidth=2.5, color="black")
+    ax.plot(r2_cost, core_perf, '-', label="R2-Router (Our Method)", linewidth=2.5, color="black")
     ax.plot(carrot_knn_cost, carrot_knn_perf, '--', label="CARROT-KNN", linewidth=2, color="orange")
     ax.plot(carrot_linear_cost, carrot_linear_perf, '--', label="CARROT-Linear", linewidth=2, color="green")
     if has_mirt:
@@ -401,15 +401,15 @@ def main():
                   edgecolor="black", linewidth=1.5, label=f"{name}", zorder=5)
     ax.set_xlabel("Cost (Token Count × Model Size)", fontsize=12)
     ax.set_ylabel("Average Quality Score", fontsize=12)
-    title_methods = "CoRE vs Baselines"
+    title_methods = "R2-Router vs Baselines"
     if has_mirt or has_nirt:
         title_methods += " (including IRT)"
     ax.set_title(f"Quality-Cost Tradeoff: {title_methods} ({len(llm_names)} LLMs)", fontsize=14, fontweight='bold')
     ax.legend(bbox_to_anchor=(1.05, 1), loc='upper left', fontsize=9)
     ax.grid(True, alpha=0.3)
     plt.tight_layout()
-    plt.savefig("./comparison_results/main/core_vs_baselines_curves_actual.png", dpi=150, bbox_inches='tight')
-    print("[OK] Saved plot: ./comparison_results/main/core_vs_baselines_curves_actual.png")
+    plt.savefig("./comparison_results/main/r2_vs_baselines_curves_actual.png", dpi=150, bbox_inches='tight')
+    print("[OK] Saved plot: ./comparison_results/main/r2_vs_baselines_curves_actual.png")
     plt.close()
 
     # Generate normalized cost plot
@@ -427,7 +427,7 @@ def main():
 
     oracle_unlimited_norm = normalize_cost(oracle_unlimited_cost)
     oracle_all_norm = normalize_cost(oracle_all_cost)
-    core_norm = normalize_cost(core_cost)
+    core_norm = normalize_cost(r2_cost)
     carrot_knn_norm = normalize_cost(carrot_knn_cost)
     carrot_linear_norm = normalize_cost(carrot_linear_cost)
     if has_mirt:
@@ -438,7 +438,7 @@ def main():
     # Plot with normalized costs
     ax.plot(oracle_unlimited_norm, oracle_unlimited_perf, '-', label="Oracle (Unlimited)", linewidth=2.5, color="red", alpha=0.8)
     ax.plot(oracle_all_norm, oracle_all_perf, '-', label="Oracle (All Limits)", linewidth=2.5, color="brown", alpha=0.8)
-    ax.plot(core_norm, core_perf, '-', label="CoRE (Our Method)", linewidth=2.5, color="black")
+    ax.plot(core_norm, core_perf, '-', label="R2-Router (Our Method)", linewidth=2.5, color="black")
     ax.plot(carrot_knn_norm, carrot_knn_perf, '--', label="CARROT-KNN", linewidth=2, color="orange")
     ax.plot(carrot_linear_norm, carrot_linear_perf, '--', label="CARROT-Linear", linewidth=2, color="green")
     if has_mirt:
@@ -451,7 +451,7 @@ def main():
         score = llms[name]["true_test_unlimited_score"].mean()
         cost = (llms[name]["true_test_unlimited_count"] * llms[name]["size"]).mean()
         # Normalize this point relative to the overall cost range
-        all_costs = np.concatenate([oracle_unlimited_cost, oracle_all_cost, core_cost])
+        all_costs = np.concatenate([oracle_unlimited_cost, oracle_all_cost, r2_cost])
         cost_min, cost_max = all_costs.min(), all_costs.max()
         if cost_max > cost_min:
             norm_cost = (cost - cost_min) / (cost_max - cost_min)
@@ -466,8 +466,8 @@ def main():
     ax.legend(bbox_to_anchor=(1.05, 1), loc='upper left', fontsize=9)
     ax.grid(True, alpha=0.3)
     plt.tight_layout()
-    plt.savefig("./comparison_results/main/core_vs_baselines_curves_normalized.png", dpi=150, bbox_inches='tight')
-    print("[OK] Saved plot: ./comparison_results/main/core_vs_baselines_curves_normalized.png")
+    plt.savefig("./comparison_results/main/r2_vs_baselines_curves_normalized.png", dpi=150, bbox_inches='tight')
+    print("[OK] Saved plot: ./comparison_results/main/r2_vs_baselines_curves_normalized.png")
     plt.close()
 
     # Find best single LLM's average performance (for correct QNC computation)
@@ -495,17 +495,17 @@ def main():
     print(f"  QNC Target Accuracy: {target_accuracy:.4f}")
 
     # Compute global cost range for QNC normalization
-    all_costs = np.concatenate([core_cost, carrot_knn_cost, carrot_linear_cost,
+    all_costs = np.concatenate([r2_cost, carrot_knn_cost, carrot_linear_cost,
                                 oracle_unlimited_cost, oracle_all_cost])
     global_cost_range = (all_costs.min(), all_costs.max())
     print(f"\nGlobal cost range: [{global_cost_range[0]:.2f}, {global_cost_range[1]:.2f}]")
 
     # Calculate metrics
-    core_audc_norm = calculate_audc(core_cost, core_perf, normalize=True, global_cost_range=global_cost_range)
-    core_qnc = calculate_qnc(core_cost, core_perf, normalize=True,
+    core_audc_norm = calculate_audc(r2_cost, core_perf, normalize=True, global_cost_range=global_cost_range)
+    core_qnc = calculate_qnc(r2_cost, core_perf, normalize=True,
                              target_perf=best_llm_accuracy, global_cost_range=global_cost_range,
                              target_accuracy_rate=args.target_accuracy_rate)
-    core_audc_actual = calculate_audc(core_cost, core_perf, normalize=False)
+    core_audc_actual = calculate_audc(r2_cost, core_perf, normalize=False)
     core_peak = core_perf.max()
 
     carrot_knn_audc_norm = calculate_audc(carrot_knn_cost, carrot_knn_perf, normalize=True, global_cost_range=global_cost_range)
@@ -556,7 +556,7 @@ def main():
 
     # Save metrics to CSV
     metrics_data = [
-        {'method': 'CoRE', 'peak_accuracy': core_peak,
+        {'method': 'R2-Router', 'peak_accuracy': core_peak,
          'AUDC_normalized': core_audc_norm, 'QNC': core_qnc,
          'AUDC_actual': core_audc_actual},
         {'method': 'CARROT-KNN', 'peak_accuracy': carrot_knn_peak,
@@ -582,13 +582,13 @@ def main():
                             'AUDC_actual': nirt_audc_actual})
 
     metrics_df = pd.DataFrame(metrics_data)
-    metrics_df.to_csv("./comparison_results/main/core_vs_baselines_metrics.csv", index=False)
-    print("[OK] Saved metrics: ./comparison_results/main/core_vs_baselines_metrics.csv")
+    metrics_df.to_csv("./comparison_results/main/r2_vs_baselines_metrics.csv", index=False)
+    print("[OK] Saved metrics: ./comparison_results/main/r2_vs_baselines_metrics.csv")
 
     print("\n" + "=" * 80)
     print("EVALUATION RESULTS")
     print("=" * 80)
-    print(f"\nCoRE (Our Method):")
+    print(f"\nR2-Router (Our Method):")
     print(f"  Peak Accuracy: {core_peak:.4f}")
     print(f"  AUDC (normalized): {core_audc_norm:.4f}")
     print(f"  QNC [0,1]: {core_qnc:.4f}")
@@ -651,7 +651,7 @@ def main():
     qnc_improvement = ((best_baseline_qnc - core_qnc) / best_baseline_qnc) * 100  # Lower is better, so reversed
 
     print(f"\n" + "=" * 80)
-    print(f"CoRE vs Best Baseline:")
+    print(f"R2-Router vs Best Baseline:")
     print(f"  AUDC improvement: {audc_improvement:+.2f}%")
     print(f"  Peak accuracy improvement: {peak_improvement:+.2f}%")
     print(f"  QNC improvement (lower is better): {qnc_improvement:+.2f}%")

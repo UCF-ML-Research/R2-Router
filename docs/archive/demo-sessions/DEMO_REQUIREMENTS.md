@@ -1,8 +1,8 @@
-# CoRE Router Demo - Project Requirements
+# R2-Router Demo - Project Requirements
 
 ## Project Overview
 
-Build an interactive web demo that allows users to test the CoRE (Constrained Response Evaluator) routing system against CARROT baselines. Users submit queries with cost constraints, and the system intelligently selects the best LLM to answer, then evaluates the response quality.
+Build an interactive web demo that allows users to test the R2-Router routing system against CARROT baselines. Users submit queries with cost constraints, and the system intelligently selects the best LLM to answer, then evaluates the response quality.
 
 ---
 
@@ -28,7 +28,7 @@ Build an interactive web demo that allows users to test the CoRE (Constrained Re
 │  │ 2. Router Selection (Parallel)                           │  │
 │  │                                                           │  │
 │  │    ┌─────────────────────┐   ┌─────────────────────┐    │  │
-│  │    │  CoRE Router        │   │  CARROT Baseline    │    │  │
+│  │    │  R2-Router        │   │  CARROT Baseline    │    │  │
 │  │    ├─────────────────────┤   ├─────────────────────┤    │  │
 │  │    │ • Load checkpoints  │   │ • KNN Baseline      │    │  │
 │  │    │ • Predict scores    │   │ • Linear Baseline   │    │  │
@@ -88,7 +88,7 @@ Build an interactive web demo that allows users to test the CoRE (Constrained Re
 
 **Router Selection:**
 - [ ] Method selection checkboxes:
-  - [x] CoRE (default checked)
+  - [x] R2-Router (default checked)
   - [x] CARROT-KNN
   - [x] CARROT-Linear
   - [ ] Oracle (optional, if you want to show theoretical best)
@@ -112,7 +112,7 @@ Build an interactive web demo that allows users to test the CoRE (Constrained Re
 
 ### 3. Routing Logic
 
-#### CoRE Router
+#### R2-Router
 
 **Input:**
 - Query embedding (vector)
@@ -121,7 +121,7 @@ Build an interactive web demo that allows users to test the CoRE (Constrained Re
 - Available LLM pool with sizes
 
 **Processing:**
-1. Load trained CoRE checkpoints for each LLM in pool
+1. Load trained R2-Router checkpoints for each LLM in pool
 2. For each LLM:
    - For each token limit (10, 20, 30, ..., unlimited):
      - Predict performance score: `s_{llm,limit}`
@@ -220,7 +220,7 @@ Return a JSON with:
 **Comparison View:**
 - [ ] Side-by-side comparison table:
 
-| Metric | CoRE | CARROT-KNN | CARROT-Linear |
+| Metric | R2-Router | CARROT-KNN | CARROT-Linear |
 |--------|------|------------|---------------|
 | Selected LLM | GLM-4.5-Air | Llama-3.1-70B | Qwen3-0.6B |
 | Token Limit | 100 | unlimited | 50 |
@@ -305,8 +305,8 @@ demo = gr.Interface(
         gr.Textbox(label="Query", lines=3),
         gr.Slider(0, 1, value=0.5, label="Lambda (λ)"),
         gr.Number(label="Cost Budget (tokens, optional)"),
-        gr.CheckboxGroup(["CoRE", "CARROT-KNN", "CARROT-Linear"],
-                        value=["CoRE"], label="Methods")
+        gr.CheckboxGroup(["R2-Router", "CARROT-KNN", "CARROT-Linear"],
+                        value=["R2-Router"], label="Methods")
     ],
     outputs=gr.HTML(label="Results")
 )
@@ -384,12 +384,12 @@ async def call_llm(llm_name: str, query: str, token_limit: int):
 Query: "What is the capital of France?"
 Lambda: 0.3 (prioritize quality)
 Budget: 200 tokens
-Methods: [CoRE, CARROT-KNN]
+Methods: [R2-Router, CARROT-KNN]
 ```
 
 **System Processing:**
 1. Generate embedding for query
-2. CoRE routing:
+2. R2-Router routing:
    - Evaluates all (LLM, token_limit) options
    - Selects: GLM-4.5-Air with 50 token limit
    - Predicted score: 0.95, predicted cost: 42 tokens, risk: 0.652
@@ -416,7 +416,7 @@ Methods: [CoRE, CARROT-KNN]
 ╚════════════════════════════════════════════════════════════╝
 
 ┌──────────────────────────────────────────────────────────┐
-│ CoRE (Our Method)                                         │
+│ R2-Router (Our Method)                                         │
 ├──────────────────────────────────────────────────────────┤
 │ Selected: GLM-4.5-Air (limit: 50 tokens)                 │
 │ Response: "Paris"                                         │
@@ -439,7 +439,7 @@ Methods: [CoRE, CARROT-KNN]
 │ Risk Value:      0.622                                    │
 └──────────────────────────────────────────────────────────┘
 
-Winner: CoRE (Better cost-effectiveness: 1.00 score / 38 tokens)
+Winner: R2-Router (Better cost-effectiveness: 1.00 score / 38 tokens)
 ```
 
 ### Example 2: Batch Queries with Tight Budget
@@ -453,7 +453,7 @@ Queries:
 
 Lambda: 0.7 (prioritize cost)
 Budget: 50 tokens per query
-Methods: [CoRE, CARROT-KNN, CARROT-Linear]
+Methods: [R2-Router, CARROT-KNN, CARROT-Linear]
 ```
 
 **System Processing:**
@@ -472,7 +472,7 @@ Overall Performance:
 
 Method          Avg Score  Total Cost  Avg Pred Error  Win Rate
 ─────────────────────────────────────────────────────────────
-CoRE               0.92      127        0.04           67% (2/3)
+R2-Router               0.92      127        0.04           67% (2/3)
 CARROT-KNN         0.88      135        0.07           33% (1/3)
 CARROT-Linear      0.85      122        0.09           0% (0/3)
 
@@ -485,7 +485,7 @@ CARROT-Linear      0.85      122        0.09           0% (0/3)
 
 ### Model Checkpoints
 
-**CoRE:**
+**R2-Router:**
 - Path: `./checkpoints/{LLM_name}_{training_scheme}/`
 - Files needed per LLM:
   - `limited_score_predictors.joblib`
@@ -527,7 +527,7 @@ TOKEN_LIMITS = [10, 20, 30, 40, 50, 80, 100, 150, 200, 300, 500, 800, 1200, 2000
 
 ### Phase 1: MVP (Minimum Viable Product)
 - [ ] Single query input
-- [ ] CoRE + CARROT-KNN only
+- [ ] R2-Router + CARROT-KNN only
 - [ ] Fixed λ = 0.5, no budget constraint
 - [ ] Simple Gradio interface
 - [ ] 2-3 LLMs from pool
@@ -536,7 +536,7 @@ TOKEN_LIMITS = [10, 20, 30, 40, 50, 80, 100, 150, 200, 300, 500, 800, 1200, 2000
 ### Phase 2: Core Features
 - [ ] Lambda slider
 - [ ] Budget constraint
-- [ ] All routing methods (CoRE, KNN, Linear)
+- [ ] All routing methods (R2-Router, KNN, Linear)
 - [ ] Real judge LLM integration
 - [ ] Better UI with result comparison
 
@@ -590,7 +590,7 @@ TOKEN_LIMITS = [10, 20, 30, 40, 50, 80, 100, 150, 200, 300, 500, 800, 1200, 2000
 ## Success Metrics
 
 **Demo should demonstrate:**
-1. CoRE outperforms CARROT baselines on average (quality or cost-effectiveness)
+1. R2-Router outperforms CARROT baselines on average (quality or cost-effectiveness)
 2. Lambda control works: λ=0 picks expensive/good, λ=1 picks cheap/ok
 3. Budget constraints are respected
 4. Predictions are reasonably accurate (within 10-15% of actual)
@@ -600,7 +600,7 @@ TOKEN_LIMITS = [10, 20, 30, 40, 50, 80, 100, 150, 200, 300, 500, 800, 1200, 2000
 - Prediction MAE < 0.1 for scores
 - Routing decision time < 100ms
 - End-to-end response time < 10 seconds
-- CoRE wins ≥ 60% of queries on quality or cost-effectiveness
+- R2-Router wins ≥ 60% of queries on quality or cost-effectiveness
 
 ---
 
@@ -612,7 +612,7 @@ TOKEN_LIMITS = [10, 20, 30, 40, 50, 80, 100, 150, 200, 300, 500, 800, 1200, 2000
    ```
    demo/
    ├── app.py              # Main Gradio/FastAPI app
-   ├── router.py           # CoRE routing logic
+   ├── router.py           # R2-Router routing logic
    ├── baselines.py        # CARROT routing logic
    ├── llm_client.py       # LLM API wrapper
    ├── judge.py            # Response evaluation

@@ -19,7 +19,7 @@ fi
 
 # Step 2: Train and evaluate
 echo ""
-echo "Step 2/3: Training CoRE predictors and evaluating performance..."
+echo "Step 2/3: Training R2-Router predictors and evaluating performance..."
 echo "================================================================================"
 python ablation/train_and_evaluate.py
 if [ $? -ne 0 ]; then

@@ -60,9 +60,9 @@ with gr.Row(visible=False) as selection_row:
 **Updated function to show selection controls:**
 ```python
 def show_visualizations(query):
-    core_fig, carrot_fig = generate_visualizations(query)
+    r2_fig, carrot_fig = generate_visualizations(query)
     return {
-        core_plot: gr.update(value=core_fig, visible=True),
+        core_plot: gr.update(value=r2_fig, visible=True),
         carrot_knn_plot: gr.update(value=carrot_fig, visible=True),
         selection_row: gr.update(visible=True)  # <-- Show selection UI
     }
@@ -76,7 +76,7 @@ visualize_btn.click(
 
 **Flow:**
 1. User clicks "Show Visualizations"
-2. Plots appear (CoRE curves + CARROT points)
+2. Plots appear (R2-Router curves + CARROT points)
 3. Selection dropdowns appear below plots
 4. User can now view plots and make selection
 
@@ -112,7 +112,7 @@ run_selected_btn.click(
 2. Click "📊 Show Visualizations"
    ↓
 3. Plots appear:
-   - CoRE: Curves showing cost-quality across token limits
+   - R2-Router: Curves showing cost-quality across token limits
    - CARROT: Points showing unlimited options
    ↓
 4. Selection controls appear below plots
@@ -137,7 +137,7 @@ run_selected_btn.click(
 └─────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────┐
-│  CoRE Plot [50%]    CARROT Plot [50%]       │
+│  R2-Router Plot [50%]    CARROT Plot [50%]       │
 │  (Horizontal, appear after clicking button) │
 └─────────────────────────────────────────────┘
 
@@ -162,7 +162,7 @@ run_selected_btn.click(
 1. **Query**: "What is the capital of France?"
 2. **Click**: "Show Visualizations"
 3. **Observe plots**:
-   - CoRE shows Qwen3-235B has high quality at 150 tokens
+   - R2-Router shows Qwen3-235B has high quality at 150 tokens
    - Cost is around 95.2
 4. **Select**:
    - LLM: Qwen3-235B
@@ -170,7 +170,7 @@ run_selected_btn.click(
 5. **Click**: "Run Selected Option"
 6. **Results**:
    ```
-   Method: CoRE
+   Method: R2-Router
    LLM: Qwen3-235B @ 150 tokens
    Predicted Score: 0.850, Cost: 95.2
    Actual Score: 0.900, Cost: 92.5

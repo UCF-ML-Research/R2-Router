@@ -147,7 +147,7 @@ Testing:
 - ✅ All baselines (CARROT-KNN, CARROT-Linear, MIRT, NIRT) evaluate without errors
 - ✅ Model pool validation added for IRT baselines (prevents dimension mismatches)
 - ✅ IID main pipeline (`main/run_experiment.sh`) runs successfully
-- ✅ All methods (CoRE, CARROT-KNN, CARROT-Linear, MIRT, NIRT, Oracles) work correctly
+- ✅ All methods (R2-Router, CARROT-KNN, CARROT-Linear, MIRT, NIRT, Oracles) work correctly
 
 ## Known Issues:
 
@@ -161,7 +161,7 @@ Testing:
 ### Token Count Prediction Bug Fixed (CRITICAL):
 **Problem**: Both OOD and IID evaluation were using **true/actual token counts** for routing decisions, which is unrealistic because the router cannot know actual token usage before inference.
 
-**Initial Impact**: This caused severe performance inversion in OOD evaluation where CoRE showed only 58.1% accuracy compared to baselines at 74-75% accuracy.
+**Initial Impact**: This caused severe performance inversion in OOD evaluation where R2-Router showed only 58.1% accuracy compared to baselines at 74-75% accuracy.
 
 **Root Cause Analysis**: Using actual token counts meant the router was making decisions with perfect knowledge of costs, which it cannot have in reality. When this "cheat" was removed by using just the token limits, costs were overestimated (e.g., limit=100 but actual usage=50).
 
@@ -169,10 +169,10 @@ Testing:
 - For **limited budgets** (10, 20, 30, ..., 4000): Use `min(limit, predicted_unlimited_count)`
   - This avoids overestimating cost when responses are shorter than the limit
   - Router can realistically predict unlimited token count from query embeddings
-- For **unlimited budget**: Use predicted token count from CoRE predictor
+- For **unlimited budget**: Use predicted token count from R2-Router predictor
 
 **Results After Fix**:
-- CoRE peak accuracy: 58.1% → 83.09% ✅
+- R2-Router peak accuracy: 58.1% → 83.09% ✅
 - CARROT-KNN: 74.5% → 83.09% ✅
 - Performance inversion completely resolved!
 
@@ -209,7 +209,7 @@ This aligns OOD evaluation with main evaluation (compare_methods.py lines 282-28
 **Status**: ✅ VERIFIED - Only difference is dataset split
 
 **Comprehensive verification completed** showing that `ood_evaluation/` and `main/` evaluation pipelines:
-1. Use **identical routing logic** for CoRE, CARROT, and IRT baselines
+1. Use **identical routing logic** for R2-Router, CARROT, and IRT baselines
 2. Use **identical token count prediction** (`min(limit, predicted_unlimited)`)
 3. Use **identical IRT cost calculation** (constant mean token count)
 4. Use **identical metrics** (AUDC, Peak Accuracy, QNC)
@@ -220,7 +220,7 @@ This aligns OOD evaluation with main evaluation (compare_methods.py lines 282-28
 **Documentation**: See `OOD_VS_MAIN_VERIFICATION.md` for detailed comparison with code references.
 
 **Results after all fixes**:
-- Main (IID): CoRE ~85-87% peak accuracy
-- OOD (MMLU-Pro): CoRE 83.09% peak accuracy
+- Main (IID): R2-Router ~85-87% peak accuracy
+- OOD (MMLU-Pro): R2-Router 83.09% peak accuracy
 - Performance difference matches expectations (OOD slightly lower due to domain shift)
 - No performance inversion, all methods achieve similar accuracy

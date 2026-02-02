@@ -7,7 +7,7 @@ import sys
 from pathlib import Path
 
 print("="*60)
-print("CoRE Router Demo - Setup Verification")
+print("R2-Router Demo - Setup Verification")
 print("="*60)
 print()
 
@@ -79,15 +79,15 @@ except Exception as e:
 
 print()
 
-# Test 5: CoRE Router
-print("5. Testing CoRE router...")
+# Test 5: R2-Router
+print("5. Testing R2-Router...")
 try:
-    from router import get_core_router
+    from router import get_r2_router
     import numpy as np
 
-    router = get_core_router()
+    router = get_r2_router()
     router.load_models()
-    print(f"   ✓ CoRE router loaded")
+    print(f"   ✓ R2-Router loaded")
     print(f"   - Type: {type(router).__name__}")
     print(f"   - Models: {len(router.predictors) if hasattr(router, 'predictors') else 'N/A (mock)'}")
 
@@ -96,7 +96,7 @@ try:
     result = router.route(dummy_embedding, lambda_val=0.5)
     print(f"   - Test route: {result['llm_name']} @ {result['token_limit']}")
 except Exception as e:
-    print(f"   ✗ CoRE router failed: {e}")
+    print(f"   ✗ R2-Router failed: {e}")
     import traceback
     traceback.print_exc()
 

@@ -1,5 +1,5 @@
 #!/bin/bash
-# CoRE Router - Cloudflare Named Tunnel Deployment
+# R2-Router - Cloudflare Named Tunnel Deployment
 # Provides permanent, custom domain
 
 set -e
@@ -11,7 +11,7 @@ RED='\033[0;31m'
 NC='\033[0m'
 
 echo -e "${BLUE}========================================${NC}"
-echo -e "${BLUE}  CoRE Router - Cloudflare Deployment${NC}"
+echo -e "${BLUE}  R2-Router - Cloudflare Deployment${NC}"
 echo -e "${BLUE}========================================${NC}"
 echo ""
 

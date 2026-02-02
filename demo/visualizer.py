@@ -1,5 +1,5 @@
 """
-Interactive Visualization for CoRE and CARROT
+Interactive Visualization for R2-Router and CARROT
 Generates plotly figures showing cost-quality tradeoffs
 """
 
@@ -10,17 +10,17 @@ from typing import Dict, List, Tuple
 import config
 
 
-def generate_core_visualization(
+def generate_r2_visualization(
     embedding: np.ndarray,
-    core_router,
+    r2_router,
     budget: float = None
 ) -> go.Figure:
     """
-    Generate interactive CoRE visualization with curves for each LLM
+    Generate interactive R2-Router visualization with curves for each LLM
 
     Args:
         embedding: Query embedding vector
-        core_router: CoRERouter instance with loaded models
+        r2_router: R2Router instance with loaded models
         budget: Optional budget to show as vertical line
 
     Returns:
@@ -39,8 +39,8 @@ def generate_core_visualization(
     ]
 
     # For each LLM, generate a curve across token limits
-    for idx, (llm_name, predictor) in enumerate(core_router.predictors.items()):
-        llm_size = core_router.llm_pool[llm_name]["size"]
+    for idx, (llm_name, predictor) in enumerate(r2_router.predictors.items()):
+        llm_size = r2_router.llm_pool[llm_name]["size"]
 
         # Get predictions
         quality_limited, quality_unlimited, token_count_unlimited = predictor.predict(embedding)
@@ -56,7 +56,7 @@ def generate_core_visualization(
         token_limits_list = []
 
         # Add limited token limits
-        limited_token_limits = [t for t in core_router.token_limits if t != "unlimited"]
+        limited_token_limits = [t for t in r2_router.token_limits if t != "unlimited"]
         for token_idx, token_limit in enumerate(limited_token_limits):
             predicted_score = quality_limited[0, token_idx]
             predicted_count = min(token_limit, token_count_unlimited[0])
@@ -115,7 +115,7 @@ def generate_core_visualization(
 
     # Update layout - enable click events
     fig.update_layout(
-        title="CoRE: Cost-Quality Curves for Each LLM (Click any point to select)",
+        title="R2-Router: Cost-Quality Curves for Each LLM (Click any point to select)",
         xaxis_title="Predicted Cost (tokens × size)",
         yaxis_title="Predicted Quality Score",
         hovermode='closest',
@@ -249,23 +249,23 @@ def generate_carrot_visualization(
 
 def generate_combined_visualization(
     embedding: np.ndarray,
-    core_router,
+    r2_router,
     carrot_router,
     budget: float = None
 ) -> Tuple[go.Figure, go.Figure]:
     """
-    Generate both CoRE and CARROT visualizations
+    Generate both R2-Router and CARROT visualizations
 
     Args:
         embedding: Query embedding vector
-        core_router: CoRERouter instance
+        r2_router: R2Router instance
         carrot_router: CARROTRouter instance
         budget: Optional budget line
 
     Returns:
-        Tuple of (core_figure, carrot_figure)
+        Tuple of (r2_figure, carrot_figure)
     """
-    core_fig = generate_core_visualization(embedding, core_router, budget)
+    r2_fig = generate_r2_visualization(embedding, r2_router, budget)
     carrot_fig = generate_carrot_visualization(embedding, carrot_router)
 
-    return core_fig, carrot_fig
+    return r2_fig, carrot_fig

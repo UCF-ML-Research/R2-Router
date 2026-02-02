@@ -2,7 +2,7 @@
 Simplified OOD evaluation script.
 
 Train and evaluate on MMLU-Pro (or any category) with one command.
-Compares CoRE against baselines: MIRT, NIRT, CARROT-Linear, CARROT-KNN.
+Compares R2-Router against baselines: MIRT, NIRT, CARROT-Linear, CARROT-KNN.
 
 Usage:
     python ood_evaluation/run_ood.py                    # MMLU-Pro (default)
@@ -21,7 +21,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from ood_dataset_manager import OODDatasetManager
 from main.shared.router_dataset import RouterDataset
-from main.core.predictor_sklearn import TokenPerformancePredictor as SklearnPredictor, route_scores
+from main.r2.predictor_sklearn import TokenPerformancePredictor as SklearnPredictor, route_scores
 from main.baselines.carrot.baselines_carrot import CarrotKNNBaseline as CarrotBaseline, CarrotLinearBaseline as LinearCarrotBaseline, route_baseline
 
 # IRT baselines are optional (require sentence-transformers)
@@ -106,7 +106,7 @@ def train_models(embeddings, train_idx, test_idx, models_config, test_category, 
         Dictionary of trained LLM data
     """
     print("\n" + "=" * 100)
-    print("TRAINING MODELS (CoRE METHOD)")
+    print("TRAINING MODELS (R2-Router METHOD)")
     print("=" * 100)
 
     llms = {}
@@ -544,7 +544,7 @@ def train_baselines(embeddings, train_idx, test_idx, models_config, test_categor
 
 def evaluate_routing(llms, baselines, test_data, lambda_range, models_config):
     """
-    Evaluate routing performance for CoRE and baselines.
+    Evaluate routing performance for R2-Router and baselines.
 
     Args:
         llms: Dictionary of LLM predictors
@@ -565,19 +565,19 @@ def evaluate_routing(llms, baselines, test_data, lambda_range, models_config):
 
     results = []
 
-    # Evaluate CoRE
-    print("\nEvaluating CoRE...")
-    core_cost, core_perf = route_scores(llms, lambda_range)
+    # Evaluate R2-Router
+    print("\nEvaluating R2-Router...")
+    r2_cost, core_perf = route_scores(llms, lambda_range)
 
-    # Normalize CoRE cost
-    core_cost_arr = np.array(core_cost)
-    if core_cost_arr.max() > core_cost_arr.min():
-        core_normalized = (core_cost_arr - core_cost_arr.min()) / (core_cost_arr.max() - core_cost_arr.min())
+    # Normalize R2-Router cost
+    r2_cost_arr = np.array(r2_cost)
+    if r2_cost_arr.max() > r2_cost_arr.min():
+        core_normalized = (r2_cost_arr - r2_cost_arr.min()) / (r2_cost_arr.max() - r2_cost_arr.min())
     else:
-        core_normalized = np.zeros_like(core_cost_arr)
+        core_normalized = np.zeros_like(r2_cost_arr)
 
-    for cost, norm_cost, perf in zip(core_cost, core_normalized, core_perf):
-        results.append({'method': 'CoRE', 'cost': cost, 'normalized_cost': norm_cost, 'accuracy': perf})
+    for cost, norm_cost, perf in zip(r2_cost, core_normalized, core_perf):
+        results.append({'method': 'R2-Router', 'cost': cost, 'normalized_cost': norm_cost, 'accuracy': perf})
 
     # Evaluate baselines
     for baseline_name, baseline_obj in baselines.items():

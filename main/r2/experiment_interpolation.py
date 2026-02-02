@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Experiment: Training CoRE with subset of token limit heads and interpolating others.
+Experiment: Training R2-Router with subset of token limit heads and interpolating others.
 
 This experiment investigates the trade-off between training efficiency and routing performance:
 - Train predictors for a subset of token limits (e.g., 2, 4, 6, ..., 16 heads)
@@ -29,7 +29,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from main.shared.dataset_manager import DatasetManager
 from main.shared.router_dataset import RouterDataset
-from main.core.predictor_sklearn import TokenPerformancePredictor, route_scores
+from main.r2.predictor_sklearn import TokenPerformancePredictor, route_scores
 
 
 # Token limits (numeric values for interpolation)
@@ -133,7 +133,7 @@ def train_with_subset_heads(dataset_manager: DatasetManager,
                             csv_path: str,
                             trained_heads: List[str]) -> Dict:
     """
-    Train CoRE predictor with only a subset of token limit heads.
+    Train R2-Router predictor with only a subset of token limit heads.
 
     Args:
         dataset_manager: DatasetManager instance
@@ -340,14 +340,14 @@ def plot_results(results_df: pd.DataFrame, output_dir: str):
     # Plot AUDC vs n_heads
     ax.plot(results_df['n_heads'], results_df['audc'],
             marker='o', linewidth=2.5, markersize=8,
-            color='#2E86AB', label='CoRE (Interpolation)', zorder=3)
+            color='#2E86AB', label='R2-Router (Interpolation)', zorder=3)
 
     # Highlight full model (16 heads)
     full_model = results_df[results_df['n_heads'] == 16]
     if not full_model.empty:
         ax.axhline(y=full_model['audc'].values[0],
                    color='red', linestyle='--', linewidth=2,
-                   label=f'CoRE Full (16 heads): {full_model["audc"].values[0]:.4f}',
+                   label=f'R2-Router Full (16 heads): {full_model["audc"].values[0]:.4f}',
                    zorder=2)
 
     # Load and plot CARROT baselines
@@ -370,7 +370,7 @@ def plot_results(results_df: pd.DataFrame, output_dir: str):
     # Labels and title
     ax.set_xlabel('Number of Trained Heads', fontsize=14, fontweight='bold')
     ax.set_ylabel('AUDC (Normalized) ↑', fontsize=14, fontweight='bold')
-    ax.set_title('Routing Performance vs. Training Efficiency\n(CoRE with Interpolation vs. CARROT)',
+    ax.set_title('Routing Performance vs. Training Efficiency\n(R2-Router with Interpolation vs. CARROT)',
                 fontsize=16, fontweight='bold')
 
     # Grid
@@ -402,7 +402,7 @@ def plot_results(results_df: pd.DataFrame, output_dir: str):
 def main():
     """Run interpolation experiment."""
     print("=" * 80)
-    print("CoRE Interpolation Experiment")
+    print("R2-Router Interpolation Experiment")
     print("=" * 80)
 
     # Models to test - using same pool as main experiment

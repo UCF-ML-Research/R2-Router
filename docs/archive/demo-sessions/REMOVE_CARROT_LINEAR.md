@@ -2,7 +2,7 @@
 
 ## Summary
 
-Removed CARROT-Linear baseline from the demo, keeping only CoRE and CARROT-KNN for simplicity.
+Removed CARROT-Linear baseline from the demo, keeping only R2-Router and CARROT-KNN for simplicity.
 
 ## Changes Made
 
@@ -25,10 +25,10 @@ carrot_linear_router.load_model()
 **File: `demo/app.py`** (lines 66-100)
 
 **Changed:**
-- Function signature: Returns `Tuple[core_figure, carrot_knn_figure]` (was 3-tuple)
+- Function signature: Returns `Tuple[r2_figure, carrot_knn_figure]` (was 3-tuple)
 - Docstring: Updated to reflect CARROT-KNN only
 - Removed: `carrot_linear_fig = generate_carrot_visualization(embedding, carrot_linear_router)`
-- Return: `return core_fig, carrot_knn_fig` (was 3-tuple)
+- Return: `return r2_fig, carrot_knn_fig` (was 3-tuple)
 
 ---
 
@@ -55,7 +55,7 @@ linear_check = gr.Checkbox(
 )
 ```
 
-**Result:** Only shows CoRE and CARROT-KNN checkboxes
+**Result:** Only shows R2-Router and CARROT-KNN checkboxes
 
 ---
 
@@ -105,13 +105,13 @@ with gr.Row():
 ### Before
 ```
 Checkboxes:
-[✓] CoRE (Our Method)
+[✓] R2-Router (Our Method)
 [✓] CARROT-KNN
 [ ] CARROT-Linear
 
 Visualization Tab:
 ┌─────────────────────────────────────────┐
-│  CoRE: Cost-Quality Curves              │
+│  R2-Router: Cost-Quality Curves              │
 │  [Full width plot]                      │
 │                                          │
 │  CARROT-KNN          CARROT-Linear      │
@@ -122,12 +122,12 @@ Visualization Tab:
 ### After
 ```
 Checkboxes:
-[✓] CoRE (Our Method)
+[✓] R2-Router (Our Method)
 [✓] CARROT-KNN
 
 Visualization Tab:
 ┌─────────────────────────────────────────┐
-│  CoRE: Cost-Quality Curves              │
+│  R2-Router: Cost-Quality Curves              │
 │  [Full width plot]                      │
 │                                          │
 │  CARROT-KNN                             │
@@ -140,7 +140,7 @@ Visualization Tab:
 ## Benefits
 
 ✅ **Simpler UI**: Fewer options, less confusion
-✅ **Cleaner comparison**: CoRE vs CARROT-KNN only
+✅ **Cleaner comparison**: R2-Router vs CARROT-KNN only
 ✅ **Faster loading**: One less model to initialize
 ✅ **Better layout**: CARROT-KNN plot now full width
 
@@ -148,7 +148,7 @@ Visualization Tab:
 
 ## What's Still Available
 
-- ✅ CoRE routing (with token limit curves)
+- ✅ R2-Router routing (with token limit curves)
 - ✅ CARROT-KNN routing (with single points)
 - ✅ Interactive visualizations for both
 - ✅ All metrics and comparisons
@@ -162,11 +162,11 @@ Visualization Tab:
 To verify the changes work correctly:
 
 1. **Startup**: Demo should load without errors (no CARROT-Linear initialization)
-2. **UI**: Only CoRE and CARROT-KNN checkboxes visible
-3. **Routing**: Can route with CoRE only, CARROT-KNN only, or both
-4. **Visualization**: Shows 2 plots (CoRE curves + CARROT-KNN points)
+2. **UI**: Only R2-Router and CARROT-KNN checkboxes visible
+3. **Routing**: Can route with R2-Router only, CARROT-KNN only, or both
+4. **Visualization**: Shows 2 plots (R2-Router curves + CARROT-KNN points)
 5. **Results**: Comparison table and detailed cards work for both methods
 
 ---
 
-*CARROT-Linear removed. Demo now focuses on CoRE vs CARROT-KNN comparison.*
+*CARROT-Linear removed. Demo now focuses on R2-Router vs CARROT-KNN comparison.*

@@ -47,7 +47,7 @@ class OpenRouterClient:
             api_key=self.api_key,
             default_headers={
                 "HTTP-Referer": "https://github.com/anthropics/router-research",
-                "X-Title": "CoRE Router Demo"
+                "X-Title": "R2-Router Demo"
             }
         )
 

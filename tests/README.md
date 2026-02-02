@@ -1,6 +1,6 @@
 # Test Scripts
 
-This directory contains validation and test scripts for the CoRE Router project.
+This directory contains validation and test scripts for the R2-Router project.
 
 ## Test Files
 

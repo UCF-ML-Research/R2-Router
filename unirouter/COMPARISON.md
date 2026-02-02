@@ -1,6 +1,6 @@
-# Comparison: Original UniRouter vs Uni-CoRE
+# Comparison: Original UniRouter vs Uni-R2
 
-This document provides a detailed comparison between the **original UniRouter** (from the paper) and **Uni-CoRE** (our implementation combining UniRouter + CoRE).
+This document provides a detailed comparison between the **original UniRouter** (from the paper) and **Uni-R2** (our implementation combining UniRouter + R2-Router).
 
 ---
 
@@ -21,7 +21,7 @@ This document provides a detailed comparison between the **original UniRouter** 
 
 ## Quick Summary
 
-| Aspect | Original UniRouter | Uni-CoRE |
+| Aspect | Original UniRouter | Uni-R2 |
 |--------|-------------------|----------|
 | **Problem** | Route to best LLM (single model selection) | Route to best (LLM, token_budget) pair |
 | **Token Budgets** | ❌ No (always use unlimited tokens) | ✅ Yes (multiple budgets: 50, 100, ..., 3200) |
@@ -55,7 +55,7 @@ Output: Single LLM name
 
 **Key assumption**: Each LLM generates response with **unlimited tokens** (or default setting)
 
-### Uni-CoRE
+### Uni-R2
 
 **Goal**: Route each query to the best (LLM, token_budget) pair
 
@@ -116,7 +116,7 @@ Output: (LLM name, token budget)
 └─────────────────────────────────────────────────────────┘
 ```
 
-### Uni-CoRE
+### Uni-R2
 
 ```
 ┌─────────────────────────────────────────────────────────┐
@@ -189,7 +189,7 @@ For each LLM h:
 Select: h* = argmin score(h)
 ```
 
-### Uni-CoRE
+### Uni-R2
 
 **LLM Representation**:
 ```
@@ -250,7 +250,7 @@ for k in range(K):
 
 **Interpretation**: "How often does LLM h fail on each type of query?"
 
-### Uni-CoRE
+### Uni-R2
 
 **Per-cluster, per-budget quality matrix**:
 
@@ -315,7 +315,7 @@ if λ = 0.01:
 Output: GPT-3.5 (always with unlimited tokens)
 ```
 
-**Uni-CoRE**:
+**Uni-R2**:
 
 ```python
 # Step 1: Compute similarity to ALL clusters
@@ -350,7 +350,7 @@ if λ = 1e-5:
 Output: (GPT-4, 400 tokens)
 ```
 
-**Key Difference**: UniRouter picks GPT-3.5 (cheaper, worse). Uni-CoRE picks GPT-4 with 400 tokens (better quality-cost tradeoff).
+**Key Difference**: UniRouter picks GPT-3.5 (cheaper, worse). Uni-R2 picks GPT-4 with 400 tokens (better quality-cost tradeoff).
 
 ---
 
@@ -383,7 +383,7 @@ centroids, assignments = kmeans(training_embeddings, K)
 **Time**: Hours (neural network training)
 **Data**: Need labeled data from training LLMs
 
-### Uni-CoRE
+### Uni-R2
 
 **No Training Phase**:
 
@@ -423,7 +423,7 @@ centroids, assignments = kmeans(validation_embeddings, K)
    - Training: ZERO
 ```
 
-### Uni-CoRE
+### Uni-R2
 
 **Cost to add new LLM**:
 
@@ -443,7 +443,7 @@ centroids, assignments = kmeans(validation_embeddings, K)
    - Training: ZERO
 ```
 
-**Tradeoff**: Uni-CoRE costs 8× more to add a model (due to multiple budgets), but enables finer-grained routing.
+**Tradeoff**: Uni-R2 costs 8× more to add a model (due to multiple budgets), but enables finer-grained routing.
 
 ---
 
@@ -454,7 +454,7 @@ centroids, assignments = kmeans(validation_embeddings, K)
 | Method | Prompts | Budgets | Total API Calls |
 |--------|---------|---------|-----------------|
 | Original UniRouter | 500 | 1 (unlimited) | **500** |
-| Uni-CoRE | 500 | 8 | **4,000** |
+| Uni-R2 | 500 | 8 | **4,000** |
 
 ### Routing Latency (per query)
 
@@ -467,7 +467,7 @@ centroids, assignments = kmeans(validation_embeddings, K)
 Total: O(K×D + M) ≈ 77,000 operations
 ```
 
-**Uni-CoRE**:
+**Uni-R2**:
 ```
 1. Compute Φ(x): O(K × D)  (K=100, D=768)
 2. Compute scores: O(M × B × K)  (M=5, B=8, K=100)
@@ -486,7 +486,7 @@ LLM features: M × K floats
 Example: 5 models × 100 clusters = 500 floats ≈ 2 KB
 ```
 
-**Uni-CoRE**:
+**Uni-R2**:
 ```
 LLM features: M × K × B floats
 Example: 5 models × 100 clusters × 8 budgets = 4,000 floats ≈ 16 KB
@@ -514,7 +514,7 @@ Example: 5 models × 100 clusters × 8 budgets = 4,000 floats ≈ 16 KB
 - ❌ Binary choice: use model or don't
 - ❌ Misses opportunity to use expensive models with small budgets
 
-### Uni-CoRE
+### Uni-R2
 
 **Pros**:
 - ✅ Token budget optimization: 8 budgets per model
@@ -522,7 +522,7 @@ Example: 5 models × 100 clusters × 8 budgets = 4,000 floats ≈ 16 KB
 - ✅ Can use expensive models with small budgets on simple queries
 - ✅ Can use cheap models with large budgets on complex queries
 - ✅ No training (simpler than learned cluster map)
-- ✅ Combines two proven ideas (UniRouter + CoRE)
+- ✅ Combines two proven ideas (UniRouter + R2-Router)
 
 **Cons**:
 - ❌ Slower validation: 4,000 API calls per new model (8× more)
@@ -564,7 +564,7 @@ Priority: Fast validation (<1 hour)
 → Use UniRouter: 500 calls = fast validation
 ```
 
-### When to Use Uni-CoRE
+### When to Use Uni-R2
 
 **Scenario 1**: Cost-sensitive applications
 ```
@@ -572,7 +572,7 @@ Problem: Serving 1M queries/day
 Budget: $10k/month budget
 Priority: Minimize cost while maintaining quality
 
-→ Use Uni-CoRE: Route simple queries to cheap+small budgets
+→ Use Uni-R2: Route simple queries to cheap+small budgets
 ```
 
 **Scenario 2**: Diverse query complexity
@@ -581,7 +581,7 @@ Problem: Queries range from "2+2" to "prove Fermat's theorem"
 Budget: Variable (willing to spend on hard queries)
 Priority: Match budget to difficulty
 
-→ Use Uni-CoRE: Small budgets for simple, large for complex
+→ Use Uni-R2: Small budgets for simple, large for complex
 ```
 
 **Scenario 3**: Quality-cost pareto frontier
@@ -590,7 +590,7 @@ Problem: Need to trace full quality-cost curve
 Budget: Sweep λ from 0 to 1e-3
 Priority: Understand tradeoff options
 
-→ Use Uni-CoRE: Multiple budgets enable fine-grained curve
+→ Use Uni-R2: Multiple budgets enable fine-grained curve
 ```
 
 ---
@@ -613,7 +613,7 @@ AUDC: 0.72
 Pareto points: 5 (one per model)
 ```
 
-**Uni-CoRE**:
+**Uni-R2**:
 ```
 Peak accuracy: 0.85 (GPT-4 @ unlimited)
 Min cost: 0.3 (GPT-3.5 @ 50 tokens)
@@ -631,14 +631,14 @@ Pareto points: 40 (5 models × 8 budgets)
 |-----------|--------|-----------|
 | **Simplicity** | UniRouter | Only pick model, not budget |
 | **Validation Cost** | UniRouter | 8× fewer API calls |
-| **Routing Quality** | Uni-CoRE | More options → better tradeoff |
-| **Cost Efficiency** | Uni-CoRE | Can use cheap models with small budgets |
-| **Flexibility** | Uni-CoRE | Supports variable token budgets |
+| **Routing Quality** | Uni-R2 | More options → better tradeoff |
+| **Cost Efficiency** | Uni-R2 | Can use cheap models with small budgets |
+| **Flexibility** | Uni-R2 | Supports variable token budgets |
 | **Memory** | UniRouter | 8× smaller features |
 | **Maturity** | UniRouter | Published and validated |
 
 **Recommendation**:
 - Use **UniRouter** if token budgets are fixed and you need fast validation
-- Use **Uni-CoRE** if you want to optimize cost-quality tradeoff with variable budgets
+- Use **Uni-R2** if you want to optimize cost-quality tradeoff with variable budgets
 
-**Best of both worlds**: Start with UniRouter for rapid prototyping, then migrate to Uni-CoRE once you've validated the model pool and want finer control over costs.
+**Best of both worlds**: Start with UniRouter for rapid prototyping, then migrate to Uni-R2 once you've validated the model pool and want finer control over costs.

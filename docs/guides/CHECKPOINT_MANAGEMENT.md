@@ -6,7 +6,7 @@ The experimental pipeline ([run_experiment.sh](run_experiment.sh)) implements in
 
 ## Two Different Checkpoint Strategies
 
-### 1. CoRE Models: Per-Model Checkpoints ✓
+### 1. R2-Router Models: Per-Model Checkpoints ✓
 
 **Location:** `./checkpoints/{ModelName}_{TrainingScheme}/`
 
@@ -21,7 +21,7 @@ The experimental pipeline ([run_experiment.sh](run_experiment.sh)) implements in
 - Only missing models are trained
 
 **Why this works:**
-- CoRE models are trained independently per LLM
+- R2-Router models are trained independently per LLM
 - No dependencies between models
 - Changing model pool doesn't invalidate existing models
 - Can mix-and-match: load some, train others
@@ -83,8 +83,8 @@ Result:
 **Retrain Triggers:**
 1. **Model pool changes** (add/remove any LLM)
 2. **Training scheme changes** (e.g., `ridge_alpha10.0` → `ridge_alpha100.0`)
-   - This changes CoRE predictions
-   - CARROT compares against CoRE, so must retrain
+   - This changes R2-Router predictions
+   - CARROT compares against R2-Router, so must retrain
 
 **Example Scenario 1: Adding a model**
 ```bash
@@ -125,12 +125,12 @@ ridge_alpha10.0|GLM-4.5-Air|0.85|data/GLM-4.5-Air.csv Llama-3.1-70B|0.40|data/Ll
 ```
 
 This captures both:
-- Training scheme used for CoRE
+- Training scheme used for R2-Router
 - Complete model pool (names, sizes, paths)
 
 ## Script Behavior Summary
 
-### Step 1: Train CoRE
+### Step 1: Train R2-Router
 ```bash
 for each model in LLM_POOL:
     if checkpoint exists with all 3 files:
@@ -160,7 +160,7 @@ if training succeeded:
 
 ### When to delete checkpoints
 
-**CoRE:**
+**R2-Router:**
 - Delete individual model checkpoints when:
   - Changing hyperparameters for that model
   - Fixing data issues for that model
@@ -185,12 +185,12 @@ rm -rf ./checkpoints/carrot_*
 rm -f ./checkpoints/carrot_config.txt
 ```
 
-To reset specific CoRE model:
+To reset specific R2-Router model:
 ```bash
 rm -rf ./checkpoints/GLM-4.5-Air_ridge_alpha10.0/
 ```
 
-To reset all CoRE models for one scheme:
+To reset all R2-Router models for one scheme:
 ```bash
 rm -rf ./checkpoints/*_ridge_alpha10.0/
 ```
@@ -202,7 +202,7 @@ rm -rf ./checkpoints/*_ridge_alpha10.0/
 - Especially important for large KNN models (200MB each)
 
 **Correctness:**
-- CARROT must match the current CoRE configuration
+- CARROT must match the current R2-Router configuration
 - Pool-level retraining ensures fair comparison
 
 **Flexibility:**

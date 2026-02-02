@@ -25,10 +25,10 @@ Instead of direct clicking, we implemented a more robust approach:
 
 **File: `demo/visualizer.py`**
 
-**CoRE Plot** (line 133):
+**R2-Router Plot** (line 133):
 ```python
 fig.update_layout(
-    title="CoRE: Cost-Quality Curves for Each LLM (Click any point to select)",
+    title="R2-Router: Cost-Quality Curves for Each LLM (Click any point to select)",
     clickmode='event+select',  # Enable Plotly selection
     ...
 )
@@ -89,7 +89,7 @@ with gr.Row():
         label="Choose Token Limit",
         choices=["10", "20", ..., "unlimited"],
         value="unlimited",
-        info="For CoRE: any limit. For CARROT: use 'unlimited'"
+        info="For R2-Router: any limit. For CARROT: use 'unlimited'"
     )
 ```
 
@@ -97,7 +97,7 @@ with gr.Row():
 - Side-by-side layout (space efficient)
 - Info text for guidance
 - All options visible in dropdown
-- Token limit has helpful hint about CoRE vs CARROT
+- Token limit has helpful hint about R2-Router vs CARROT
 
 ---
 
@@ -130,7 +130,7 @@ run_selected_btn = gr.Button(
 2. Click "Show Visualizations"
    ↓
 3. **Interactive exploration:**
-   - Hover over CoRE curves to see quality at different token limits
+   - Hover over R2-Router curves to see quality at different token limits
    - Hover over CARROT points to see unlimited predictions
    - Compare costs and qualities visually
    - Points highlight when clicked (Plotly built-in)
@@ -210,7 +210,7 @@ run_selected_btn = gr.Button(
 
 **Steps:**
 1. Click "Show Visualizations"
-2. Hover over CoRE curves:
+2. Hover over R2-Router curves:
    - Sees Qwen3-235B @ 150 has quality 0.85, cost 95
    - Sees Llama3-70B @ 200 has quality 0.80, cost 110 (too expensive)
    - Sees gemma-3-4b @ unlimited has quality 0.70, cost 50 (lower quality)
@@ -221,7 +221,7 @@ run_selected_btn = gr.Button(
 5. Click "Run Inference"
 6. See results:
    ```
-   Method: CoRE
+   Method: R2-Router
    LLM: Qwen3-235B @ 150
    Predicted: score=0.85, cost=95
    Actual: score=0.88, cost=92
@@ -254,7 +254,7 @@ run_selected_btn = gr.Button(
 ## Documentation
 
 The plots now have clear titles:
-- **CoRE**: "Cost-Quality Curves for Each LLM (Click any point to select)"
+- **R2-Router**: "Cost-Quality Curves for Each LLM (Click any point to select)"
 - **CARROT**: "Single Quality-Cost Point per LLM (Click any point to select)"
 
 Users understand they should:

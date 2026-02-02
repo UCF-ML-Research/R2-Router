@@ -1,14 +1,14 @@
 """
-Main experimental package for CoRE (Constrained Response Evaluator).
+Main experimental package for R2-Router.
 
 This package contains all the core functionality for training and evaluating
-the CoRE routing system and baseline methods in IID (in-distribution) setting.
+the R2-Router routing system and baseline methods in IID (in-distribution) setting.
 
 Subpackages:
-- core: CoRE predictor implementations
+- core: R2-Router predictor implementations
   - predictor: PyTorch-based neural network predictor
   - predictor_sklearn: Sklearn-based linear regression predictor
-  - train_core: Training script for CoRE predictors
+  - train_r2: Training script for R2-Router predictors
 
 - baselines: Baseline routing methods
   - carrot: CARROT baseline methods (KNN and Linear)

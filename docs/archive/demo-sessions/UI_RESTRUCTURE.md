@@ -40,7 +40,7 @@ Restructured the demo UI to have two equal workflow modes side-by-side:
 └──────────────────────┴──────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────┐
-│  CoRE Plot [50%]               CARROT Plot [50%]        │
+│  R2-Router Plot [50%]               CARROT Plot [50%]        │
 │  (visible after visualization) (visible after viz)      │
 └─────────────────────────────────────────────────────────┘
 
@@ -73,14 +73,14 @@ Select routing methods and lambda, then route directly.
 Lambda (λ): Quality ← → Cost
 [Slider: 0.0 to 1.0]
 
-[✓] CoRE    [✓] CARROT-KNN
+[✓] R2-Router    [✓] CARROT-KNN
 
 [🚀 Route Query]
 ```
 
 **Workflow:**
 1. User sets lambda (cost-quality tradeoff)
-2. User selects methods (CoRE, CARROT-KNN, or both)
+2. User selects methods (R2-Router, CARROT-KNN, or both)
 3. Click "Route Query"
 4. System runs routing, calls LLM, evaluates, shows results
 
@@ -103,7 +103,7 @@ View cost-quality curves/points, click to select LLM and token limit.
 **Workflow:**
 1. User clicks "Show Visualizations"
 2. Plots appear showing predicted cost-quality for all options:
-   - CoRE: Curves with points for each token limit
+   - R2-Router: Curves with points for each token limit
    - CARROT: Points for each LLM (unlimited only)
 3. **[TODO]** User clicks on a point to select
 4. **[TODO]** System runs inference with selected option
@@ -124,7 +124,7 @@ View cost-quality curves/points, click to select LLM and token limit.
 
 ```python
 with gr.Row():
-    core_plot = gr.Plot(label="CoRE: Cost-Quality Curves", visible=False)
+    core_plot = gr.Plot(label="R2-Router: Cost-Quality Curves", visible=False)
     carrot_knn_plot = gr.Plot(label="CARROT-KNN: Cost-Quality Points", visible=False)
 ```
 
@@ -144,9 +144,9 @@ with gr.Row():
 
 ```python
 def show_visualizations(query):
-    core_fig, carrot_fig = generate_visualizations(query)
+    r2_fig, carrot_fig = generate_visualizations(query)
     return {
-        core_plot: gr.update(value=core_fig, visible=True),
+        core_plot: gr.update(value=r2_fig, visible=True),
         carrot_knn_plot: gr.update(value=carrot_fig, visible=True)
     }
 ```

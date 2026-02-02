@@ -274,4 +274,4 @@ quality_pred, token_pred = carrot.predict(new_embeddings)
 ✅ **Easy to use:** Just pass `llm_names` to `fit()`
 ✅ **Production ready:** Checkpoints + comprehensive evaluation
 
-The refactored CARROT baselines now provide the same level of insight and visualization quality as the main predictor, making it easy to compare baseline performance with the CoRE router across all LLMs!
+The refactored CARROT baselines now provide the same level of insight and visualization quality as the main predictor, making it easy to compare baseline performance with the R2-Router across all LLMs!

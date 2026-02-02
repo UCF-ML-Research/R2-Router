@@ -2,12 +2,12 @@
 
 ## What Was Added
 
-Interactive Plotly visualizations showing cost-quality tradeoffs for CoRE and CARROT.
+Interactive Plotly visualizations showing cost-quality tradeoffs for R2-Router and CARROT.
 
 ## New Files
 
 **`demo/visualizer.py`** - Complete visualization module
-- `generate_core_visualization()`: Curves for each LLM across token limits
+- `generate_r2_visualization()`: Curves for each LLM across token limits
 - `generate_carrot_visualization()`: Points for each LLM (unlimited only)
 
 ## Modified Files
@@ -19,7 +19,7 @@ Interactive Plotly visualizations showing cost-quality tradeoffs for CoRE and CA
 
 ## Features
 
-### CoRE Visualization
+### R2-Router Visualization
 - **Curves** showing cost-quality tradeoff for each LLM
 - Each curve = one LLM across 16 token limits (10 to unlimited)
 - X-axis: Predicted Cost
@@ -30,9 +30,9 @@ Interactive Plotly visualizations showing cost-quality tradeoffs for CoRE and CA
 ### CARROT Visualization
 - **Points** showing one cost-quality pair per LLM
 - Only unlimited setting (CARROT doesn't use token limits)
-- Same axes as CoRE
+- Same axes as R2-Router
 - Labels on each point
-- **Interactive**: Same features as CoRE
+- **Interactive**: Same features as R2-Router
 
 ## UI Layout
 
@@ -42,7 +42,7 @@ Buttons:
 
 Tabs:
 ┌─ 📊 Visualizations ────────────────────┐
-│  CoRE: Cost-Quality Curves             │
+│  R2-Router: Cost-Quality Curves             │
 │  [Large interactive plot]              │
 │                                         │
 │  CARROT-KNN          CARROT-Linear     │
@@ -56,7 +56,7 @@ Tabs:
 
 ## Key Differences Visualized
 
-| CoRE | CARROT |
+| R2-Router | CARROT |
 |------|--------|
 | Curves (multiple token limits) | Points (unlimited only) |
 | 16 options per LLM | 1 option per LLM |
@@ -65,7 +65,7 @@ Tabs:
 
 ## Example Interpretation
 
-**CoRE Curve:**
+**R2-Router Curve:**
 ```
 Quality ↑
     │    ╱────╲ LLM curve
@@ -91,7 +91,7 @@ Each LLM = one point (unlimited only)
 
 ## Benefits
 
-✅ **Visual comparison**: See CoRE vs CARROT architectures
+✅ **Visual comparison**: See R2-Router vs CARROT architectures
 ✅ **Budget constraints**: Vertical line shows feasible options
 ✅ **Query-specific**: Predictions update per query
 ✅ **Interactive**: Hover, zoom, explore predictions

@@ -16,7 +16,7 @@ This document identifies which files are actively used vs obsolete/redundant in 
 
 **Predictors:**
 - `predictor_sklearn.py` - **PRIMARY**: Sklearn-based predictors (Ridge, Lasso, RF, GBM, MLP)
-  - Used by: `train_core.py`, `compare_methods.py`
+  - Used by: `train_r2.py`, `compare_methods.py`
 - `predictor.py` - **SECONDARY**: PyTorch neural networks + `route_scores()` function
   - Used by: `results.py`, `baselines_irt.py`, some routing logic
 
@@ -27,7 +27,7 @@ This document identifies which files are actively used vs obsolete/redundant in 
   - Used by: `results.py`, OOD evaluation
 
 **Entry Points:**
-- `train_core.py` - Trains CoRE predictors (called by run_experiment.sh)
+- `train_r2.py` - Trains R2-Router predictors (called by run_experiment.sh)
 - `train_carrot.py` - Trains CARROT baselines (called by run_experiment.sh)
 - `compare_methods.py` - Compares methods (called by run_experiment.sh)
 - `results.py` - Manual evaluation script (legacy, not called by run_experiment.sh)
@@ -113,7 +113,7 @@ This document identifies which files are actively used vs obsolete/redundant in 
    - **Status: REQUIRED - Primary user documentation**
 
 3. **`CHECKPOINT_MANAGEMENT.md`** (5.8K) - **IMPORTANT**
-   - Explains CoRE vs CARROT checkpoint behavior
+   - Explains R2-Router vs CARROT checkpoint behavior
    - Configuration tracking logic
    - Created today, highly relevant
    - **Status: KEEP - Important reference**
@@ -235,7 +235,7 @@ mv NAMING_IMPROVEMENTS.md docs/archive/refactoring/
 - Core: dataset_manager.py, router_dataset.py, llm_loader.py, utils.py
 - Predictors: predictor_sklearn.py, predictor.py
 - Baselines: baselines_carrot.py, baselines_irt.py
-- Entry points: train_core.py, train_carrot.py, compare_methods.py, results.py
+- Entry points: train_r2.py, train_carrot.py, compare_methods.py, results.py
 - Utilities: check_data.py
 - Orchestrator: run_experiment.sh
 

@@ -54,14 +54,14 @@ Highest Predicted Risk = Winner 🏆
 ## Example
 
 ```
-CoRE:    predicted_risk = 0.60 🏆 (WINS - best routing decision)
+R2-Router:    predicted_risk = 0.60 🏆 (WINS - best routing decision)
          actual_risk = 0.52
 
 CARROT:  predicted_risk = 0.46
          actual_risk = 0.67 (got lucky with outcome)
 ```
 
-CoRE wins because it made the **better routing decision**, even though CARROT happened to get better actual results.
+R2-Router wins because it made the **better routing decision**, even though CARROT happened to get better actual results.
 
 ---
 

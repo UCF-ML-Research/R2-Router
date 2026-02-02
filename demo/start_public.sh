@@ -1,5 +1,5 @@
 #!/bin/bash
-# CoRE Router Public Deployment Startup Script
+# R2-Router Public Deployment Startup Script
 # This script starts both the Gradio app and Cloudflare tunnel
 
 set -e
@@ -11,7 +11,7 @@ YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
 echo -e "${BLUE}========================================${NC}"
-echo -e "${BLUE}  CoRE Router Public Deployment${NC}"
+echo -e "${BLUE}  R2-Router Public Deployment${NC}"
 echo -e "${BLUE}========================================${NC}"
 echo ""
 

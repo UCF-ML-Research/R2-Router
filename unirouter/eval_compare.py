@@ -1,9 +1,9 @@
 """
-Comparative Evaluation: Original UniRouter vs Uni-CoRE
+Comparative Evaluation: Original UniRouter vs Uni-R2
 
 Demonstrates:
 1. Original UniRouter: Routes to best LLM (unlimited tokens)
-2. Uni-CoRE: Routes to best (LLM, token_budget) pair
+2. Uni-R2: Routes to best (LLM, token_budget) pair
 3. Dynamic model addition: Add new models without retraining
 4. Performance comparison across methods
 """
@@ -46,12 +46,12 @@ def parse_lambda_distribution(lambda_dist_str):
     return np.unique(all_lambdas)
 
 from unirouter.unirouter_original import OriginalUniRouter
-from unirouter.uni_core import ValidationSetBuilder, ModelFeatureMatrix, UniCoreRouter
+from unirouter.uni_r2 import ValidationSetBuilder, ModelFeatureMatrix, UniR2Router
 from main.shared.dataset_manager import DatasetManager
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description='Compare Original UniRouter vs Uni-CoRE')
+    parser = argparse.ArgumentParser(description='Compare Original UniRouter vs Uni-R2')
 
     # Model specifications
     parser.add_argument('--initial-model', action='append', nargs=3,
@@ -153,7 +153,7 @@ def main():
     args = parse_args()
 
     print("=" * 80)
-    print("Comparative Evaluation: Original UniRouter vs Uni-CoRE")
+    print("Comparative Evaluation: Original UniRouter vs Uni-R2")
     print("=" * 80)
 
     # Parse token budgets
@@ -250,7 +250,7 @@ def main():
     print(f"\n✓ Registered {len(original_router.model_features)} models")
 
     # ========================================================================
-    # Step 4: Register Initial Models - Uni-CoRE
+    # Step 4: Register Initial Models - Uni-R2
     # ========================================================================
     print("\n" + "=" * 80)
     print("STEP 4: UNI-CORE (Initial Models)")
@@ -301,21 +301,21 @@ def main():
     )
     print("✓ Original UniRouter evaluation complete")
 
-    # Evaluate Uni-CoRE
-    print("\nEvaluating Uni-CoRE (initial pool)...")
-    unicore_router = UniCoreRouter(
+    # Evaluate Uni-R2
+    print("\nEvaluating Uni-R2 (initial pool)...")
+    unir2_router = UniR2Router(
         feature_matrix=feature_matrix,
         val_embeddings=val_builder.val_embeddings if not args.use_clustering else None,
         cluster_embeddings=val_builder.cluster_embeddings if args.use_clustering else None
     )
 
-    unicore_initial_costs, unicore_initial_perfs = unicore_router.evaluate_routing(
+    uni_r2_initial_costs, uni_r2_initial_perfs = unir2_router.evaluate_routing(
         test_embeddings,
         true_scores,
         true_counts,
         lambda_range
     )
-    print("✓ Uni-CoRE evaluation complete")
+    print("✓ Uni-R2 evaluation complete")
 
     # ========================================================================
     # Step 6: Add New Models Dynamically
@@ -341,7 +341,7 @@ def main():
             # Add to Original UniRouter
             original_router.register_model(name, df, val_idx, size)
 
-            # Add to Uni-CoRE
+            # Add to Uni-R2
             features = val_builder.compute_model_features(name, df, val_idx)
             print(f"    Feature shape: {features.shape}")
             feature_matrix.register_model(name, features, size)
@@ -372,15 +372,15 @@ def main():
         )
         print("✓ Original UniRouter evaluation complete")
 
-        # Evaluate Uni-CoRE
-        print("\nEvaluating Uni-CoRE (expanded pool)...")
-        unicore_expanded_costs, unicore_expanded_perfs = unicore_router.evaluate_routing(
+        # Evaluate Uni-R2
+        print("\nEvaluating Uni-R2 (expanded pool)...")
+        uni_r2_expanded_costs, uni_r2_expanded_perfs = unir2_router.evaluate_routing(
             test_embeddings,
             true_scores,
             true_counts,
             lambda_range
         )
-        print("✓ Uni-CoRE evaluation complete")
+        print("✓ Uni-R2 evaluation complete")
 
     else:
         print("\n" + "=" * 80)
@@ -388,8 +388,8 @@ def main():
         print("=" * 80)
         original_expanded_costs = original_initial_costs
         original_expanded_perfs = original_initial_perfs
-        unicore_expanded_costs = unicore_initial_costs
-        unicore_expanded_perfs = unicore_initial_perfs
+        uni_r2_expanded_costs = uni_r2_initial_costs
+        uni_r2_expanded_perfs = uni_r2_initial_perfs
 
     # ========================================================================
     # Step 8: Find Best Single LLM and Compute Global Cost Range
@@ -428,8 +428,8 @@ def main():
     all_costs = np.concatenate([
         original_initial_costs,
         original_expanded_costs,
-        unicore_initial_costs,
-        unicore_expanded_costs
+        uni_r2_initial_costs,
+        uni_r2_expanded_costs
     ])
     global_cost_range = (all_costs.min(), all_costs.max())
     print(f"\nGlobal Cost Range:")
@@ -448,8 +448,8 @@ def main():
     for method, costs, perfs in [
         ('Original UniRouter (Initial)', original_initial_costs, original_initial_perfs),
         ('Original UniRouter (Expanded)', original_expanded_costs, original_expanded_perfs),
-        ('Uni-CoRE (Initial)', unicore_initial_costs, unicore_initial_perfs),
-        ('Uni-CoRE (Expanded)', unicore_expanded_costs, unicore_expanded_perfs),
+        ('Uni-R2 (Initial)', uni_r2_initial_costs, uni_r2_initial_perfs),
+        ('Uni-R2 (Expanded)', uni_r2_expanded_costs, uni_r2_expanded_perfs),
     ]:
         # Normalize cost using global range
         cost_min, cost_max = global_cost_range
@@ -477,8 +477,8 @@ def main():
     for method, costs, perfs in [
         ('Original UniRouter (Initial)', original_initial_costs, original_initial_perfs),
         ('Original UniRouter (Expanded)', original_expanded_costs, original_expanded_perfs),
-        ('Uni-CoRE (Initial)', unicore_initial_costs, unicore_initial_perfs),
-        ('Uni-CoRE (Expanded)', unicore_expanded_costs, unicore_expanded_perfs),
+        ('Uni-R2 (Initial)', uni_r2_initial_costs, uni_r2_initial_perfs),
+        ('Uni-R2 (Expanded)', uni_r2_expanded_costs, uni_r2_expanded_perfs),
     ]:
         peak_acc, audc_norm, qnc, audc_actual = compute_metrics(
             costs, perfs,
@@ -518,8 +518,8 @@ def main():
     plt.plot(original_initial_costs, original_initial_perfs, '--',
              label='Original UniRouter (Initial, unlimited tokens)',
              linewidth=2.5, alpha=0.7, color='blue')
-    plt.plot(unicore_initial_costs, unicore_initial_perfs, '--',
-             label='Uni-CoRE (Initial, multiple budgets)',
+    plt.plot(uni_r2_initial_costs, uni_r2_initial_perfs, '--',
+             label='Uni-R2 (Initial, multiple budgets)',
              linewidth=2.5, alpha=0.7, color='green')
 
     # Plot expanded pool
@@ -527,13 +527,13 @@ def main():
         plt.plot(original_expanded_costs, original_expanded_perfs, '-',
                  label=f'Original UniRouter (Expanded +{len(args.new_model)} models)',
                  linewidth=2.5, color='blue')
-        plt.plot(unicore_expanded_costs, unicore_expanded_perfs, '-',
-                 label=f'Uni-CoRE (Expanded +{len(args.new_model)} models, no retraining!)',
+        plt.plot(uni_r2_expanded_costs, uni_r2_expanded_perfs, '-',
+                 label=f'Uni-R2 (Expanded +{len(args.new_model)} models, no retraining!)',
                  linewidth=2.5, color='green')
 
     plt.xlabel('Cost (Token Count × Model Size)', fontsize=12)
     plt.ylabel('Average Quality Score', fontsize=12)
-    plt.title('Comparison: Original UniRouter vs Uni-CoRE (Actual Cost)', fontsize=14, fontweight='bold')
+    plt.title('Comparison: Original UniRouter vs Uni-R2 (Actual Cost)', fontsize=14, fontweight='bold')
     plt.legend(fontsize=10, loc='lower right')
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
@@ -557,17 +557,17 @@ def main():
             return np.zeros_like(cost_arr)
 
     original_initial_norm = normalize_cost_array(original_initial_costs)
-    unicore_initial_norm = normalize_cost_array(unicore_initial_costs)
+    uni_r2_initial_norm = normalize_cost_array(uni_r2_initial_costs)
     if args.new_model and len(args.new_model) > 0:
         original_expanded_norm = normalize_cost_array(original_expanded_costs)
-        unicore_expanded_norm = normalize_cost_array(unicore_expanded_costs)
+        uni_r2_expanded_norm = normalize_cost_array(uni_r2_expanded_costs)
 
     # Plot initial pool
     plt.plot(original_initial_norm, original_initial_perfs, '--',
              label='Original UniRouter (Initial, unlimited tokens)',
              linewidth=2.5, alpha=0.7, color='blue')
-    plt.plot(unicore_initial_norm, unicore_initial_perfs, '--',
-             label='Uni-CoRE (Initial, multiple budgets)',
+    plt.plot(uni_r2_initial_norm, uni_r2_initial_perfs, '--',
+             label='Uni-R2 (Initial, multiple budgets)',
              linewidth=2.5, alpha=0.7, color='green')
 
     # Plot expanded pool
@@ -575,13 +575,13 @@ def main():
         plt.plot(original_expanded_norm, original_expanded_perfs, '-',
                  label=f'Original UniRouter (Expanded +{len(args.new_model)} models)',
                  linewidth=2.5, color='blue')
-        plt.plot(unicore_expanded_norm, unicore_expanded_perfs, '-',
-                 label=f'Uni-CoRE (Expanded +{len(args.new_model)} models, no retraining!)',
+        plt.plot(uni_r2_expanded_norm, uni_r2_expanded_perfs, '-',
+                 label=f'Uni-R2 (Expanded +{len(args.new_model)} models, no retraining!)',
                  linewidth=2.5, color='green')
 
     plt.xlabel('Normalized Cost [0,1]', fontsize=12)
     plt.ylabel('Average Quality Score', fontsize=12)
-    plt.title('Comparison: Original UniRouter vs Uni-CoRE (Normalized Cost)', fontsize=14, fontweight='bold')
+    plt.title('Comparison: Original UniRouter vs Uni-R2 (Normalized Cost)', fontsize=14, fontweight='bold')
     plt.legend(fontsize=10, loc='lower right')
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
@@ -602,9 +602,9 @@ def main():
     original_router.save(original_checkpoint)
     print(f"✓ Saved Original UniRouter to {original_checkpoint}")
 
-    unicore_checkpoint = f"{args.checkpoint_dir}/unicore_feature_matrix.pkl"
-    feature_matrix.save(unicore_checkpoint)
-    print(f"✓ Saved Uni-CoRE feature matrix to {unicore_checkpoint}")
+    uni_r2_checkpoint = f"{args.checkpoint_dir}/uni_r2_feature_matrix.pkl"
+    feature_matrix.save(uni_r2_checkpoint)
+    print(f"✓ Saved Uni-R2 feature matrix to {uni_r2_checkpoint}")
 
     # ========================================================================
     # Step 12: Create config.txt
@@ -615,7 +615,7 @@ def main():
 
     # Build config content
     config_content = f"""# UniRouter Experiment Configuration
-# Comparison: Original UniRouter vs Uni-CoRE
+# Comparison: Original UniRouter vs Uni-R2
 
 [Validation Set]
 val_size = {args.val_size}
@@ -680,7 +680,7 @@ target_accuracy = {target_accuracy:.4f}
         print(f"✓ Added {len(args.new_model)} NEW models WITHOUT retraining")
         print(f"✓ Final pool: {len(feature_matrix.get_models())} models")
         print(f"✓ Original UniRouter: {original_initial_perfs.max():.4f} → {original_expanded_perfs.max():.4f}")
-        print(f"✓ Uni-CoRE: {unicore_initial_perfs.max():.4f} → {unicore_expanded_perfs.max():.4f}")
+        print(f"✓ Uni-R2: {uni_r2_initial_perfs.max():.4f} → {uni_r2_expanded_perfs.max():.4f}")
 
     print("\n" + "=" * 80)
     print("COMPLETE!")
@@ -692,7 +692,7 @@ target_accuracy = {target_accuracy:.4f}
     print(f"  - {plot_path_actual}")
     print(f"  - {plot_path_normalized}")
     print(f"  - {original_checkpoint}")
-    print(f"  - {unicore_checkpoint}")
+    print(f"  - {uni_r2_checkpoint}")
 
 
 if __name__ == "__main__":

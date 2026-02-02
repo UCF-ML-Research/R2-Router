@@ -37,13 +37,13 @@ python ood_evaluation/run_ood.py \
 
 That's it! The script will:
 1. Load data and split by category (train on 19, test on 1)
-2. Train CoRE with **Ridge regression (alpha=10.0)** - same as IID for consistent generalization
+2. Train R2-Router with **Ridge regression (alpha=10.0)** - same as IID for consistent generalization
 3. Train baselines (MIRT, NIRT, CARROT-KNN, CARROT-Linear)
 4. Evaluate routing performance
 5. Generate plots and metrics
 6. Save results to `./comparison_results/ood_evaluation/`
 
-**Important**: CoRE now uses Ridge regression instead of LinearRegression to prevent overfitting
+**Important**: R2-Router now uses Ridge regression instead of LinearRegression to prevent overfitting
 on training categories. This improves OOD accuracy from ~53% to ~75%, making it competitive with CARROT baselines.
 
 **Checkpoint Loading**: The script automatically loads existing checkpoints instead of retraining. On subsequent runs,
@@ -82,9 +82,9 @@ ood_evaluation/
 │   └── embeddings/           # Category-specific embeddings
 ├── checkpoints/               # OOD-trained model checkpoints (organized by test category)
 │   ├── TIGER-Lab_MMLU-Pro/   # Checkpoints when MMLU-Pro is held out
-│   │   ├── GLM_4_5_Air_ridge_alpha10.0/   # CoRE predictor (Ridge, trained on other 19)
-│   │   ├── GLM_4_6_ridge_alpha10.0/       # CoRE predictor
-│   │   ├── ... (10 CoRE models total)
+│   │   ├── GLM_4_5_Air_ridge_alpha10.0/   # R2-Router predictor (Ridge, trained on other 19)
+│   │   ├── GLM_4_6_ridge_alpha10.0/       # R2-Router predictor
+│   │   ├── ... (10 R2-Router models total)
 │   │   ├── carrot_knn/       # CARROT-KNN baseline
 │   │   ├── carrot_linear/    # CARROT-Linear baseline
 │   │   ├── irt_mirt/         # MIRT baseline
@@ -176,7 +176,7 @@ Edit the `LLM_POOL` array in the script to customize your model pool.
 ## How It Works
 
 1. **Data Split**: For test category C, train on all queries NOT in C, test on queries in C
-2. **Training**: Train CoRE predictors and baselines on training split (no data leakage!)
+2. **Training**: Train R2-Router predictors and baselines on training split (no data leakage!)
 3. **Routing**: For each query, select best (model, token_limit) based on predictions
 4. **Evaluation**: Compare routing accuracy vs cost across methods
 

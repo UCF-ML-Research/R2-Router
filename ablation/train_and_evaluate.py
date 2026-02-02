@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """
-Train CoRE predictors and evaluate performance for different embedding models.
+Train R2-Router predictors and evaluate performance for different embedding models.
 
 This script:
 1. Loads embeddings for each embedding model
-2. Trains CoRE predictors (sklearn-based, fast)
+2. Trains R2-Router predictors (sklearn-based, fast)
 3. Evaluates AUDC, QNC, Peak Accuracy
 4. Saves results for comparison
 """
@@ -20,7 +20,7 @@ from tqdm import tqdm
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from main.shared.dataset_manager import DatasetManager
-from main.core.predictor_sklearn import TokenPerformancePredictor, route_scores
+from main.r2.predictor_sklearn import TokenPerformancePredictor, route_scores
 
 
 def compute_audc(costs: np.ndarray, perfs: np.ndarray) -> float:
@@ -67,7 +67,7 @@ def train_and_evaluate_embedding(embedding_key: str,
                                  token_limits_score: list,
                                  token_limits_count: list) -> dict:
     """
-    Train CoRE predictors and evaluate for one embedding model.
+    Train R2-Router predictors and evaluate for one embedding model.
 
     Args:
         embedding_key: Key identifier for embedding model

@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 from ..shared.dataset_manager import DatasetManager
 from ..shared.llm_loader import load_llm
-from ..core.predictor import route_scores
+from ..r2.predictor import route_scores
 from ..baselines.carrot.baselines_carrot import CarrotKNNBaseline as CarrotBaseline, CarrotLinearBaseline as LinearCarrotBaseline, route_baseline
 from ..baselines.irt.baselines_irt import IRTBaseline, NIRTBaseline
 
@@ -20,7 +20,7 @@ colors = plt.cm.tab10.colors
 # from predictor import TokenPerformancePredictor as PredictorClass
 
 # Option 2: Sklearn-based linear regression predictor
-from ..core.predictor_sklearn import TokenPerformancePredictor as PredictorClass
+from ..r2.predictor_sklearn import TokenPerformancePredictor as PredictorClass
 
 # ============================================================================
 

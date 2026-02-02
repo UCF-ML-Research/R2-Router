@@ -1,12 +1,12 @@
-# CoRE Router Demo
+# R2-Router Demo
 
-Interactive web demo for testing the CoRE (Constrained Response Evaluator) routing system against CARROT baselines.
+Interactive web demo for testing the R2-Router routing system against CARROT baselines.
 
 ## Overview
 
 This demo allows users to:
-- Submit queries and see which LLM CoRE selects
-- Compare CoRE against CARROT-KNN and CARROT-Linear baselines
+- Submit queries and see which LLM R2-Router selects
+- Compare R2-Router against CARROT-KNN and CARROT-Linear baselines
 - Adjust the cost-quality tradeoff parameter (λ)
 - Set budget constraints
 - View actual vs predicted performance metrics
@@ -18,7 +18,7 @@ demo/
 ├── app.py              # Main Gradio application
 ├── config.py           # Configuration (LLM pool, paths, API keys)
 ├── embedder.py         # Query embedding module
-├── router.py           # CoRE routing logic
+├── router.py           # R2-Router routing logic
 ├── baselines.py        # CARROT baseline routing
 ├── llm_client.py       # OpenRouter API client
 ├── judge.py            # Response evaluation module
@@ -70,10 +70,10 @@ LLM_POOL = {
 
 ### 4. Verify Checkpoints
 
-Make sure your trained CoRE and CARROT checkpoints exist:
+Make sure your trained R2-Router and CARROT checkpoints exist:
 
 ```bash
-# Check CoRE checkpoints
+# Check R2-Router checkpoints
 ls -l ../checkpoints/GLM-4.5-Air_ridge_alpha10.0/
 # Should see: limited_score_predictors.joblib, unlimited_score_predictor.joblib, unlimited_token_predictor.joblib
 
@@ -152,7 +152,7 @@ SENTENCE_TRANSFORMER_MODEL = "all-MiniLM-L6-v2"  # Fast (384 dim)
    - λ = 0.5: Balanced
    - λ = 1.0: Prioritize cost (cheapest option)
 3. **Set budget** (optional): Maximum cost in tokens × model_size
-4. **Select methods** to compare (CoRE, CARROT-KNN, CARROT-Linear)
+4. **Select methods** to compare (R2-Router, CARROT-KNN, CARROT-Linear)
 5. **Click "Route Query"**
 
 ### Understanding Results
@@ -346,7 +346,7 @@ Return JSON: {{"score": <0-1>, "reasoning": "<text>"}}
 }
 ```
 
-2. Train CoRE model for it:
+2. Train R2-Router model for it:
 ```bash
 cd ..
 # Add to run_experiment.sh LLM_POOL
@@ -399,15 +399,15 @@ Common enhancements:
 
 ## License
 
-Same as main CoRE project.
+Same as main R2-Router project.
 
 ## Citation
 
 If you use this demo in research:
 
 ```bibtex
-@software{core_router_demo,
-  title = {CoRE Router Demo},
+@software{r2_router_demo,
+  title = {R2-Router Demo},
   author = {Your Name},
   year = {2025},
   url = {https://github.com/...}

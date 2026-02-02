@@ -1,5 +1,5 @@
 #!/bin/bash
-# CoRE Router - Simple Startup Script with Gradio Share
+# R2-Router - Simple Startup Script with Gradio Share
 # Generates a public URL valid for 72 hours
 
 set -e
@@ -10,7 +10,7 @@ YELLOW='\033[1;33m'
 NC='\033[0m'
 
 echo -e "${BLUE}========================================${NC}"
-echo -e "${BLUE}  CoRE Router - Starting...${NC}"
+echo -e "${BLUE}  R2-Router - Starting...${NC}"
 echo -e "${BLUE}========================================${NC}"
 echo ""
 
@@ -34,7 +34,7 @@ pkill -f "python.*app.py" 2>/dev/null || true
 lsof -ti:7860 | xargs kill -9 2>/dev/null || true
 sleep 2
 
-echo -e "${GREEN}🚀 Starting CoRE Router...${NC}"
+echo -e "${GREEN}🚀 Starting R2-Router...${NC}"
 echo -e "${BLUE}📍 Local: http://localhost:7860${NC}"
 echo -e "${YELLOW}⏳ Generating public URL (takes ~10 seconds)...${NC}"
 echo ""

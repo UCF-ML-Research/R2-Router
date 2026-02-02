@@ -21,7 +21,7 @@ if str(parent_dir) not in sys.path:
 import config
 
 try:
-    from main.core.predictor_sklearn import TokenPerformancePredictor
+    from main.r2.predictor_sklearn import TokenPerformancePredictor
     PREDICTOR_AVAILABLE = True
 except ImportError:
     PREDICTOR_AVAILABLE = False

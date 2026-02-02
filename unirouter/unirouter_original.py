@@ -20,7 +20,7 @@ class OriginalUniRouter:
     """
     Original UniRouter: Routes queries to best LLM (always with unlimited tokens).
 
-    Key differences from Uni-CoRE:
+    Key differences from Uni-R2:
     - No token budget optimization (always uses unlimited tokens)
     - Simpler features: Ψ(h) ∈ R^K (per-cluster error rates)
     - Routing: Pick best LLM only
@@ -205,7 +205,7 @@ class OriginalUniRouter:
                 # This is a weighted average of cluster error rates
                 pred_error = phi_x @ psi_h
 
-                # Estimate unlimited tokens based on CoRD data average
+                # Estimate unlimited tokens based on R2-Bench data average
                 assumed_tokens = 3650  # Average unlimited_count from dataset
                 cost = per_token_cost * assumed_tokens
 
