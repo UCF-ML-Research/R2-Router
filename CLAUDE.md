@@ -821,6 +821,44 @@ main/
 - `demo/embedder.py` → Query embeddings
 - `demo/visualizer.py` → Plotly visualizations
 
+## RouterArena Submission (In Progress)
+
+We are preparing to submit CoRE as a router to the **RouterArena** benchmark (https://github.com/RouteWorks/RouterArena).
+
+### Key Findings from Investigation
+
+1. **Repository structure**: RouterArena requires routers to be added under `router_inference/routers/` with a config JSON and prediction outputs.
+2. **Model constraints**: All models used by a router must be listed in `universal_model_names.py` (34 models currently available). If adding a new model, you must also add the API inference endpoint in `llm_inference/model_inference.py`.
+3. **No precedent for adding new models**: As of Feb 2026, no submitted router PR has ever modified `universal_model_names.py`. The vLLM-SR PR (#61) used only existing models (gpt-4o-mini, claude-3-haiku, gemini-2.0-flash).
+4. **Our LLM pool status**:
+   - Already in RouterArena's model list: Qwen3-235B, GLM-4.5-Air, GLM-4.6 (need to verify exact name mappings)
+   - NOT in RouterArena's model list: Llama-3.2-3B-Instruct, Qwen2.5-Math-1.5B, Qwen2.5-Math-7B, Qwen3-0.6B, gemma-3-4b-it, Llama-3.1-70B-Instruct, Qwen3-Next-80B-A3B-Instruct
+   - Need to check `universal_model_names.py` for exact available models
+
+### Submission Strategy Options
+
+| Option | Approach | Risk |
+|--------|----------|------|
+| **A. Use existing models only** | Select from RouterArena's 34 available models | Safe, no reviewer pushback |
+| **B. Add new models** | Modify `universal_model_names.py` + `model_cost.json` + `model_inference.py` | No precedent, may be rejected |
+| **C. Hybrid** | Use mostly existing models, add 1-2 critical ones | Moderate risk |
+
+### Next Steps for Submission
+- [ ] Clone RouterArena repo and check exact models in `universal_model_names.py`
+- [ ] Map our LLM pool to RouterArena's available models (find closest substitutes if needed)
+- [ ] Decide on submission strategy (A/B/C above)
+- [ ] Implement CoRE router adapter for RouterArena's interface
+- [ ] Generate predictions on RouterArena's evaluation set
+- [ ] Submit PR following their contribution guidelines
+
+### RouterArena PR Format Reference
+Based on merged PRs (e.g., #61 vLLM-SR):
+- Add router class in `router_inference/routers/{router_name}.py`
+- Add config JSON in `router_inference/routers/{router_name}.json`
+- Add prediction outputs for standard and robustness evaluations
+- Update `router_inference/routers/__init__.py` to export the new router class
+- Model cost data in `model_cost/model_cost.json` (restructured in PR #62)
+
 ## Environment and Dependencies
 
 **Python Environment:**
