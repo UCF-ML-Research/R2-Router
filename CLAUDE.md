@@ -900,90 +900,120 @@ Based on merged PRs (e.g., #61 vLLM-SR):
 2. `model_inference.py` — 添加推理端点（vLLM 本地部署可用 OpenAI-compatible API）
 3. `model_cost.json` — 添加定价信息
 
-## R2-Router + vLLM Semantic Router 结合方案
+## RouterArena 评测机制详解
 
-### 动机
-vLLM-SR 是 RouterArena 排名第一的 router（Arena Score 67.23），但它只做 query→model 的一维路由。R2-Router 的核心贡献是发现 LLM 在不同 token budget 下性能不同（Section 4.3.4: "The reasoning capability of R2-Router is orthogonal to existing quality predictors"），可以作为 plug-in module 扩展任何已有 router。
-
-### vLLM-SR 工作原理
-- BERT-based semantic classifier 将 query 分为 14 个 category（biology, math, law 等）
-- 每个 category 静态映射到一个 model（`category_model_mapping`）
-- 仅用 3 个 model: gpt-4o-mini, claude-3-haiku, gemini-2.0-flash
-- 分类 API: `POST /api/v1/classify/intent` → `{category: "math_decision"}`
-
-### 结合策略：R2-Router as a Post-Processing Layer
-
-**方案 A: Budget Extension（推荐）**
-vLLM-SR 选 model → R2-Router 为该 model 选最优 token budget
-
+### Arena Score 公式
 ```
-Query → vLLM-SR classifier → category → model_name
-                                           ↓
-                               R2-Router quality predictor
-                               Q(query, model, budget) for b ∈ {10, 20, ..., unlimited}
-                                           ↓
-                               b* = argmax (1-λ)·Q(x, M, b) - λ·C(b)
-                                           ↓
-                               Output: (model_name, b*)
+S = ((1 + β) × A × C) / (β × A + C)
+```
+- `A` = 平均 accuracy（0~1）
+- `C` = 归一化 cost = `(log₂(c_max) - log₂(cost)) / (log₂(c_max) - log₂(c_min))`
+  - `c_max = 200`, `c_min = 0.0044`（单位：$/1000 queries）
+- `β` = accuracy-cost 权重参数（默认 0.1）
+
+### β 参数与 Leaderboard
+- Leaderboard 上 β 可调（slider），不同 β 下排名不同
+- β = 0.1（默认）：accuracy 权重 >> cost（~10:1）
+- β > 1：更看重 cost
+- **关键**：每个 router 只提交一份 prediction file，(accuracy, cost) 固定不变
+- β 只改变同一组 (A, C) 的加权方式，不改变路由决策
+- 调 β 只是在已有 router 之间重新排名
+
+### 对 R2-Router 的影响
+- R2-Router 的 λ（路由决策参数）和 RouterArena 的 β（评测参数）是**两个独立的参数**
+- λ 决定你选哪个 (model, budget) → 决定你的 (accuracy, cost) 点
+- β 决定该点的 Arena Score
+- **策略**：可以提交多个版本（不同 λ），覆盖不同 β 下的最优排名
+  - `r2-router-accuracy`（λ 小，偏 accuracy）→ β 小时排名好
+  - `r2-router-balanced`（λ 中等）→ β 适中时排名好
+  - `r2-router-efficient`（λ 大，偏 cost）→ β 大时排名好
+
+### Prediction File 格式
+每个 query 一个 entry：
+```json
+{
+  "global index": "ArcMMLU_655",
+  "prompt": "...(RouterArena 提供的 query)...",
+  "prediction": "model-name",              // 我们选的 model
+  "generated_result": {                     // 我们跑 inference 的结果
+    "generated_answer": "...(LLM 回答)...",
+    "success": true,
+    "token_usage": {
+      "input_tokens": 101,
+      "output_tokens": 76,
+      "total_tokens": 177
+    },
+    "provider": "local-vllm",
+    "error": null
+  },
+  "cost": null,           // RouterArena CI 根据 token_usage + model_cost.json 计算
+  "accuracy": null,        // RouterArena CI 根据 generated_answer 判对错
+  "for_optimality": false
+}
+```
+- token budget 的效果体现在 `output_tokens` 上 — budget 低则 output 短，cost 低
+- RouterArena 不需要知道你用了什么 budget，只看 answer 和 token count
+
+## 独立 R2-Router 提交方案（不结合 vLLM-SR）
+
+### 训练流程
+
+#### Step 1: 数据收集（HiPerGator + vLLM）
+对每个 LLM × 每个 token budget，在训练数据上跑 inference：
+```bash
+python data_collection/main.py \
+    --model_name "Qwen/Qwen3-235B-A22B-Instruct-2507" \
+    --output_dir ./results/Qwen3-235B \
+    --token_limits "10 20 30 40 50 80 100 150 200 300 500 800 1200 2000 4000 0"
+```
+8 模型 × 16 budget = 128 次推理任务
+
+#### Step 2: Judge 打分
+```bash
+python data_collection/judge.py results/Qwen3-235B/*.csv --gpu_counts 2
 ```
 
-- 优势：保留 vLLM-SR 的模型选择能力，R2-Router 只负责 budget 优化
-- 实现简单：在 vLLM-SR 的 `_get_prediction` 之后加一步
-- 可以显著降低 cost（很多 query 不需要 unlimited tokens）
-
-**方案 B: Full (Model, Budget) Search**
-用 vLLM-SR category 作为 feature，R2-Router 在所有 (model, budget) 组合中搜索最优
-
-```
-Query → vLLM-SR classifier → category embedding
-Query → Sentence encoder → query embedding
-Combine → [query_emb; category_one_hot]
-                    ↓
-        R2-Router predictor for each (M, b):
-        Q(x, M, b) and C(b)
-                    ↓
-        (M*, b*) = argmax (1-λ)·Q - λ·C
+#### Step 3: 提取 Embeddings
+```bash
+python data_collection/extract_embeddings.py --output_path data/prompt_embeddings.pkl
 ```
 
-- 优势：R2-Router 可以推翻 vLLM-SR 的模型选择（如果预测到另一个模型更好）
-- 利用 category 信息作为额外 feature 增强质量预测
-- 风险：可能 overfit，需要更多训练数据
+#### Step 4: 合并成训练 CSV
+每个 LLM 一个 CSV：`prompts_id | 10_score | ... | unlimited_score | unlimited_count`
 
-**方案 C: Cascading Router**
-vLLM-SR 先做粗筛（选 top-k models），R2-Router 在 top-k 中精选 (model, budget)
-
-```
-Query → vLLM-SR → top-k candidate models (based on category scores)
-                        ↓
-         R2-Router predictor for each candidate × budget:
-         Q(x, M_i, b_j) and C(b_j)
-                        ↓
-         (M*, b*) = argmax among candidates
+#### Step 5: 训练 Quality Predictor
+```bash
+python -m main.r2.train_r2 \
+    --model_type torch_mlp \
+    --hidden_layers "256,128,64" \
+    --torch_epochs 100 \
+    --model "Qwen3-235B" "0.88" "data/Qwen3-235B.csv" "checkpoints/Qwen3-235B_torch_mlp" \
+    --model "Gemma-3-4B" "0.06" "data/Gemma-3-4B.csv" "checkpoints/Gemma-3-4B_torch_mlp" \
+    ...
 ```
 
-### 推荐：方案 A
+#### Step 6: 路由推理 + Inference
+对 RouterArena 每个 query：
+```
+risk(M, b) = (1-λ) · Q(x, M, b) - λ · C(b) · size_M
+(M*, b*) = argmax risk
+```
+用 M* 以 b* 为 max_tokens 跑 inference → 填充 generated_result
 
-理由：
-1. **最简单实现**：只需在 vLLM-SR 选完模型后加一个 budget 预测步骤
-2. **与论文一致**：Section 4.3.4 明确说 R2-Router 可以作为 plug-in 扩展已有 router
-3. **低风险**：如果 budget 预测不好，fallback 到 unlimited 即可，不比 vLLM-SR 差
-4. **明确贡献**：在 RouterArena 上展示 "same accuracy, lower cost" 或 "better cost-accuracy tradeoff"
+### λ 选择策略
+- λ 需在训练集上 tune 使 Arena Score 最大化
+- 由于 β=0.1 时 accuracy 权重远大于 cost，λ 应偏小（偏 accuracy）
+- 可提交多版本覆盖不同 β
 
-### 实现路径（方案 A）
-1. 训练 R2-Router quality predictor（用新 LLM pool 的数据）
-2. 在 RouterArena 中创建 `r2_vllm_sr.py`，继承 BaseRouter
-3. `_get_prediction` 内部：
-   - 调用 vLLM-SR classify API 获取 model
-   - 用 R2-Router predictor 预测各 budget 下的 quality
-   - 返回 model name（budget 信息存在 prediction JSON 的 metadata 中）
-4. 修改 `llm_inference/run.py`：读取 metadata 中的 budget，注入 constraint prompt
-5. 跑 inference 生成 response → 填充 `generated_result`
-
-### 需要解决的问题
-- [ ] RouterArena 的 prediction JSON 是否支持 metadata 字段存储 token_budget？
-- [ ] vLLM-SR 的 classify API 需要部署（Rust 服务），HiPerGator 上是否可行？
-- [ ] 新 LLM pool 的训练数据收集（需要在新模型上跑 R2-Bench 实验）
-- [ ] vLLM-SR 只用 3 个 model，我们的 pool 有 8 个 — category_model_mapping 需要重新设计
+### 待完成
+- [ ] 在新 LLM pool 上收集 RouterArena queries 的训练数据
+- [ ] 训练 quality predictor
+- [ ] 在训练集上 tune λ
+- [ ] 实现 R2-Router adapter class（继承 BaseRouter）
+- [ ] 修改 `llm_inference/run.py` 支持 max_tokens 约束
+- [ ] 生成 prediction file（standard + robustness）
+- [ ] 用 `check_config_prediction_files.py` 验证
+- [ ] 提交 PR
 
 ## Environment and Dependencies
 
