@@ -843,12 +843,29 @@ We are preparing to submit R2-Router as a router to the **RouterArena** benchmar
 | **B. Add new models** | Modify `universal_model_names.py` + `model_cost.json` + `model_inference.py` | No precedent, may be rejected |
 | **C. Hybrid** | Use mostly existing models, add 1-2 critical ones | Moderate risk |
 
+### Submission Pipeline Understanding
+
+RouterArena 的提交流程要求我们自己跑 LLM inference 并上传带 `generated_result` 的 prediction 文件：
+
+| 步骤 | 谁做 | 说明 |
+|------|------|------|
+| 1. Router 选模型 | 我们 | `_get_prediction(query) → model_name` |
+| 2. LLM Inference | 我们 | 调 API 获取 response，填充 `generated_result` |
+| 3. Evaluation | RouterArena CI | 判断答案对错，算 accuracy |
+| 4. Score Computation | RouterArena CI | 算 Arena Score、cost 等 |
+
+**关键适配点**: R2-Router 路由到 (model, token_budget) 对，需要在 inference 时给 LLM 加上 budget constraint prompt。需要修改 RouterArena 的 `llm_inference/run.py`，在发 API 请求前根据 token_budget 注入约束（如 "请在 X 个 word 内回答" 或设 `max_tokens`）。
+
 ### Next Steps for Submission
-- [ ] Clone RouterArena repo and check exact models in `universal_model_names.py`
+- [ ] Check exact models in RouterArena's `universal_model_names.py`
 - [ ] Map our LLM pool to RouterArena's available models (find closest substitutes if needed)
 - [ ] Decide on submission strategy (A/B/C above)
-- [ ] Implement R2-Router adapter for RouterArena's interface
-- [ ] Generate predictions on RouterArena's evaluation set
+- [ ] Implement R2-Router adapter class (`_get_prediction` returning model name)
+- [ ] Store token_budget in prediction JSON for inference use
+- [ ] Modify `llm_inference/run.py` to inject budget constraint prompt based on token_budget
+- [ ] Generate predictions on RouterArena's evaluation set (full + robustness)
+- [ ] Run LLM inference with budget constraints to populate `generated_result`
+- [ ] Validate with `check_config_prediction_files.py`
 - [ ] Submit PR following their contribution guidelines
 
 ### RouterArena PR Format Reference
@@ -858,6 +875,115 @@ Based on merged PRs (e.g., #61 vLLM-SR):
 - Add prediction outputs for standard and robustness evaluations
 - Update `router_inference/routers/__init__.py` to export the new router class
 - Model cost data in `model_cost/model_cost.json` (restructured in PR #62)
+
+## RouterArena LLM Inference Plan
+
+### Infrastructure: vLLM on HiPerGator
+- 使用 vLLM 框架通过 sbatch 在 HiPerGator GPU 集群上部署开源 LLM
+- 对每个 query，R2-Router 选出 (model, token_budget) 后，通过 vLLM 推理获取 response
+- 填充 RouterArena prediction 文件中的 `generated_result` 字段
+
+### 新 LLM Pool（替代 R2-Bench 的模型池）
+| Model | Type | Notes |
+|-------|------|-------|
+| Qwen3-235B-A22B-Instruct-2507 | MoE 235B/22B active | 最大模型 |
+| Qwen3-30B-A3B-Instruct-2507 | MoE 30B/3B active | 中等 |
+| Qwen3-Next-80B-A3B-Instruct | MoE 80B/3B active | 高效 |
+| GLM-4.5-Air | Dense | 已在 RouterArena 中 |
+| GLM-4.6 | Dense | 需要添加到 RouterArena |
+| DeepSeek-V3.1 | MoE | 强推理模型 |
+| Gemma 3 4B | Dense 4B | 小模型，低成本 |
+| Mistral-7B-Instruct-v0.2 | Dense 7B | 已在 RouterArena (`mistralai/mistral-7b-instruct`) |
+
+**RouterArena 兼容性**: 可以添加不在 `universal_model_names.py` 中的 LLM，需同时修改 3 个文件：
+1. `universal_model_names.py` — 注册模型名
+2. `model_inference.py` — 添加推理端点（vLLM 本地部署可用 OpenAI-compatible API）
+3. `model_cost.json` — 添加定价信息
+
+## R2-Router + vLLM Semantic Router 结合方案
+
+### 动机
+vLLM-SR 是 RouterArena 排名第一的 router（Arena Score 67.23），但它只做 query→model 的一维路由。R2-Router 的核心贡献是发现 LLM 在不同 token budget 下性能不同（Section 4.3.4: "The reasoning capability of R2-Router is orthogonal to existing quality predictors"），可以作为 plug-in module 扩展任何已有 router。
+
+### vLLM-SR 工作原理
+- BERT-based semantic classifier 将 query 分为 14 个 category（biology, math, law 等）
+- 每个 category 静态映射到一个 model（`category_model_mapping`）
+- 仅用 3 个 model: gpt-4o-mini, claude-3-haiku, gemini-2.0-flash
+- 分类 API: `POST /api/v1/classify/intent` → `{category: "math_decision"}`
+
+### 结合策略：R2-Router as a Post-Processing Layer
+
+**方案 A: Budget Extension（推荐）**
+vLLM-SR 选 model → R2-Router 为该 model 选最优 token budget
+
+```
+Query → vLLM-SR classifier → category → model_name
+                                           ↓
+                               R2-Router quality predictor
+                               Q(query, model, budget) for b ∈ {10, 20, ..., unlimited}
+                                           ↓
+                               b* = argmax (1-λ)·Q(x, M, b) - λ·C(b)
+                                           ↓
+                               Output: (model_name, b*)
+```
+
+- 优势：保留 vLLM-SR 的模型选择能力，R2-Router 只负责 budget 优化
+- 实现简单：在 vLLM-SR 的 `_get_prediction` 之后加一步
+- 可以显著降低 cost（很多 query 不需要 unlimited tokens）
+
+**方案 B: Full (Model, Budget) Search**
+用 vLLM-SR category 作为 feature，R2-Router 在所有 (model, budget) 组合中搜索最优
+
+```
+Query → vLLM-SR classifier → category embedding
+Query → Sentence encoder → query embedding
+Combine → [query_emb; category_one_hot]
+                    ↓
+        R2-Router predictor for each (M, b):
+        Q(x, M, b) and C(b)
+                    ↓
+        (M*, b*) = argmax (1-λ)·Q - λ·C
+```
+
+- 优势：R2-Router 可以推翻 vLLM-SR 的模型选择（如果预测到另一个模型更好）
+- 利用 category 信息作为额外 feature 增强质量预测
+- 风险：可能 overfit，需要更多训练数据
+
+**方案 C: Cascading Router**
+vLLM-SR 先做粗筛（选 top-k models），R2-Router 在 top-k 中精选 (model, budget)
+
+```
+Query → vLLM-SR → top-k candidate models (based on category scores)
+                        ↓
+         R2-Router predictor for each candidate × budget:
+         Q(x, M_i, b_j) and C(b_j)
+                        ↓
+         (M*, b*) = argmax among candidates
+```
+
+### 推荐：方案 A
+
+理由：
+1. **最简单实现**：只需在 vLLM-SR 选完模型后加一个 budget 预测步骤
+2. **与论文一致**：Section 4.3.4 明确说 R2-Router 可以作为 plug-in 扩展已有 router
+3. **低风险**：如果 budget 预测不好，fallback 到 unlimited 即可，不比 vLLM-SR 差
+4. **明确贡献**：在 RouterArena 上展示 "same accuracy, lower cost" 或 "better cost-accuracy tradeoff"
+
+### 实现路径（方案 A）
+1. 训练 R2-Router quality predictor（用新 LLM pool 的数据）
+2. 在 RouterArena 中创建 `r2_vllm_sr.py`，继承 BaseRouter
+3. `_get_prediction` 内部：
+   - 调用 vLLM-SR classify API 获取 model
+   - 用 R2-Router predictor 预测各 budget 下的 quality
+   - 返回 model name（budget 信息存在 prediction JSON 的 metadata 中）
+4. 修改 `llm_inference/run.py`：读取 metadata 中的 budget，注入 constraint prompt
+5. 跑 inference 生成 response → 填充 `generated_result`
+
+### 需要解决的问题
+- [ ] RouterArena 的 prediction JSON 是否支持 metadata 字段存储 token_budget？
+- [ ] vLLM-SR 的 classify API 需要部署（Rust 服务），HiPerGator 上是否可行？
+- [ ] 新 LLM pool 的训练数据收集（需要在新模型上跑 R2-Bench 实验）
+- [ ] vLLM-SR 只用 3 个 model，我们的 pool 有 8 个 — category_model_mapping 需要重新设计
 
 ## Environment and Dependencies
 
