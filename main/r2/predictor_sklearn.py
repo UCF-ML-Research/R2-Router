@@ -4,9 +4,8 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from typing import Dict, List, Optional, Tuple
 from tqdm import tqdm
-from sklearn.linear_model import LinearRegression, Ridge, Lasso, ElasticNet
+from sklearn.linear_model import LinearRegression
 from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
-from sklearn.neural_network import MLPRegressor
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score, confusion_matrix
 from joblib import dump, load
 from ..shared.router_dataset import RouterDataset
@@ -120,8 +119,6 @@ class TokenPerformancePredictor:
                  token_limits: Optional[List[str]] = None,
                  load_dir: Optional[str] = None,
                  model_type: str = "linear",
-                 alpha: float = 1.0,
-                 l1_ratio: float = 0.5,
                  random_state: int = 42,
                  **model_kwargs):
         """
@@ -133,21 +130,13 @@ class TokenPerformancePredictor:
             load_dir: Directory to load pre-trained models from (optional)
             model_type: Type of regression model to use:
                        - "linear": Linear Regression (no regularization)
-                       - "ridge": Ridge Regression (L2 regularization)
-                       - "lasso": Lasso Regression (L1 regularization)
-                       - "elasticnet": ElasticNet (L1 + L2 regularization)
                        - "random_forest": Random Forest Regressor
                        - "gradient_boosting": Gradient Boosting Regressor
-                       - "mlp": Multi-layer Perceptron (Neural Network)
-            alpha: Regularization strength (for ridge, lasso, elasticnet)
-            l1_ratio: ElasticNet mixing parameter (0=Ridge, 1=Lasso)
             random_state: Random seed for reproducibility
             **model_kwargs: Additional keyword arguments for the model
         """
         self.token_limits = token_limits
         self.model_type = model_type
-        self.alpha = alpha
-        self.l1_ratio = l1_ratio
         self.random_state = random_state
         self.model_kwargs = model_kwargs
 
@@ -162,20 +151,10 @@ class TokenPerformancePredictor:
         """Create a new model instance based on model_type."""
         if self.model_type == "linear":
             return LinearRegression(**self.model_kwargs)
-        elif self.model_type == "ridge":
-            return Ridge(alpha=self.alpha, random_state=self.random_state, **self.model_kwargs)
-        elif self.model_type == "lasso":
-            return Lasso(alpha=self.alpha, random_state=self.random_state, **self.model_kwargs)
-        elif self.model_type == "elasticnet":
-            return ElasticNet(alpha=self.alpha, l1_ratio=self.l1_ratio, random_state=self.random_state, **self.model_kwargs)
         elif self.model_type == "random_forest":
             return RandomForestRegressor(random_state=self.random_state, **self.model_kwargs)
         elif self.model_type == "gradient_boosting":
             return GradientBoostingRegressor(random_state=self.random_state, **self.model_kwargs)
-        elif self.model_type == "mlp":
-            # Extract max_iter from model_kwargs if present, otherwise use default 1000
-            max_iter = self.model_kwargs.pop('max_iter', 1000) if 'max_iter' in self.model_kwargs else 1000
-            return MLPRegressor(random_state=self.random_state, max_iter=max_iter, **self.model_kwargs)
         else:
             raise ValueError(f"Unknown model_type: {self.model_type}")
 
@@ -257,8 +236,6 @@ class TokenPerformancePredictor:
         # 1. Train limited budget score predictors (15 models)
         # ============================================================
         print(f"🚀 [1/3] Training limited budget score predictors (15 models) with {self.model_type}...")
-        if self.model_type != "linear":
-            print(f"   Hyperparameters: alpha={self.alpha}, l1_ratio={self.l1_ratio}, random_state={self.random_state}")
         limited_preds_dict, limited_true_dict = {}, {}
 
         for token in tqdm(limited_tokens, desc="Limited budgets"):
@@ -454,24 +431,12 @@ if __name__ == "__main__":
     # HYPERPARAMETER CONFIGURATION - Edit this section to tune model performance
     # ============================================================================
 
-    # Model type: "linear", "ridge", "lasso", "elasticnet", "random_forest", "gradient_boosting", "mlp"
-    MODEL_TYPE = "ridge"  # Try "ridge" for better generalization than plain "linear"
-
-    # Regularization strength (for ridge, lasso, elasticnet)
-    # Smaller alpha = less regularization (may overfit), Larger alpha = more regularization (may underfit)
-    ALPHA = 10.0  # Default: 1.0, Try: 0.1, 1.0, 10.0, 100.0
-
-    # ElasticNet mixing (only for elasticnet)
-    # 0 = pure Ridge, 1 = pure Lasso, 0.5 = equal mix
-    L1_RATIO = 0.5
+    # Model type: "linear", "random_forest", "gradient_boosting"
+    MODEL_TYPE = "linear"
 
     # Random Forest / Gradient Boosting specific parameters
     N_ESTIMATORS = 100  # Number of trees (default: 100)
     MAX_DEPTH = None  # Maximum tree depth (None = unlimited)
-
-    # MLP (Neural Network) specific parameters
-    HIDDEN_LAYER_SIZES = (100, 50)  # Neural network architecture
-    LEARNING_RATE_INIT = 0.001  # Learning rate for MLP
 
     # Define token limits (shared across all models)
     token_limits_score = [
@@ -510,23 +475,14 @@ if __name__ == "__main__":
         model_kwargs = {"n_estimators": N_ESTIMATORS, "max_depth": MAX_DEPTH}
     elif MODEL_TYPE == "gradient_boosting":
         model_kwargs = {"n_estimators": N_ESTIMATORS, "max_depth": MAX_DEPTH}
-    elif MODEL_TYPE == "mlp":
-        model_kwargs = {"hidden_layer_sizes": HIDDEN_LAYER_SIZES, "learning_rate_init": LEARNING_RATE_INIT}
     else:
         model_kwargs = {}
 
     print("=" * 80)
     print(f"TRAINING WITH MODEL TYPE: {MODEL_TYPE}")
-    if MODEL_TYPE in ["ridge", "lasso", "elasticnet"]:
-        print(f"  Alpha: {ALPHA}")
-        if MODEL_TYPE == "elasticnet":
-            print(f"  L1 Ratio: {L1_RATIO}")
-    elif MODEL_TYPE in ["random_forest", "gradient_boosting"]:
+    if MODEL_TYPE in ["random_forest", "gradient_boosting"]:
         print(f"  N Estimators: {N_ESTIMATORS}")
         print(f"  Max Depth: {MAX_DEPTH}")
-    elif MODEL_TYPE == "mlp":
-        print(f"  Hidden Layers: {HIDDEN_LAYER_SIZES}")
-        print(f"  Learning Rate: {LEARNING_RATE_INIT}")
     print("=" * 80)
 
     # Train each model
@@ -556,8 +512,6 @@ if __name__ == "__main__":
         predictor = TokenPerformancePredictor(
             token_limits=token_limits_score,
             model_type=MODEL_TYPE,
-            alpha=ALPHA,
-            l1_ratio=L1_RATIO,
             **model_kwargs
         )
 

@@ -3,7 +3,7 @@
 R2-Router: Route queries and evaluate against sweep ground truth.
 
 Steps:
-  1. Load predictors (quality Ridge per model×budget, token LinearRegression per model)
+  1. Load predictors (quality KNN per model×budget, token predictor per model)
   2. For each query, compute risk = (1-λ)*quality - λ*tokens*price for all (model, budget)
   3. Pick the best (model, budget) per query
   4. Look up actual accuracy and cost from budget_sweep JSON files
@@ -39,21 +39,20 @@ def arena_score(accuracy: float, cost_per_1kq: float, beta: float = 0.1) -> floa
     C = (math.log2(200) - math.log2(cost_per_1kq)) / (math.log2(200) - math.log2(0.0044))
     C = max(0.0, min(1.0, C))
     A = accuracy
-    b2 = beta ** 2
-    denom = b2 * A + C
+    denom = beta * A + C
     if denom == 0:
         return 0.0
-    return ((1 + b2) * A * C) / denom * 100
+    return ((1 + beta) * A * C) / denom * 100
 
 
 # ── Load predictors ─────────────────────────────────────────────────────────
 
 def load_predictors():
-    """Load per-category quality and token Ridge predictors.
+    """Load per-category quality and token KNN predictors.
 
     Returns:
-        quality: {cat_name: {model_name: {budget: Ridge}}}
-        token:   {cat_name: {model_name: LinearRegression}}
+        quality: {cat_name: {model_name: {budget: predictor}}}
+        token:   {cat_name: {model_name: predictor}}
         confidence: {cat_name: {model_name: {"quality_r2": float, "token_r2": float}}}
     """
     predictors_dir = os.path.join(CHECKPOINT_DIR, "predictors")
@@ -91,17 +90,8 @@ def load_predictors():
         if cat_name not in results:
             continue
         for model_name, minfo in results[cat_name]["models"].items():
-            # Use cv_r2 from whichever architecture was selected
-            arch = minfo.get("best_architecture", "Ridge")
-            if arch == "KNN":
-                q_r2 = minfo.get("KNN_cv_r2", 0.0)
-                t_r2 = minfo.get("knn_token_cv_r2", 0.0)
-            elif arch == "MLP":
-                q_r2 = minfo.get("MLP_cv_r2", 0.0)
-                t_r2 = minfo.get("mlp_token_cv_r2", 0.0)
-            else:
-                q_r2 = minfo.get("Ridge_cv_r2", 0.0)
-                t_r2 = minfo.get("ridge_token_cv_r2", 0.0)
+            q_r2 = minfo.get("KNN_cv_r2", 0.0)
+            t_r2 = minfo.get("knn_token_cv_r2", 0.0)
             confidence[cat_name][model_name] = {
                 "quality_r2": max(0.0, q_r2),
                 "token_r2": t_r2,
@@ -265,29 +255,6 @@ def evaluate(routes, global_indices, prices):
     score = arena_score(accuracy, cost_1kq)
 
     return accuracy, cost_1kq, score, model_counts, found
-
-
-# ── Evaluate using training_data.pkl (predicted tokens × price) ──────────────
-
-def evaluate_from_training_data(routes, models_data, prices):
-    """Evaluate using ground-truth accuracy from training_data.pkl
-    and actual cost = output_tokens × price."""
-    n = len(routes)
-    total_acc = 0.0
-    total_cost = 0.0
-    model_counts = defaultdict(int)
-
-    for i, (mn, budget) in enumerate(routes):
-        model_counts[mn] += 1
-        if mn in models_data and budget in models_data[mn]:
-            total_acc += float(models_data[mn][budget]["accuracy"][i])
-            tokens = float(models_data[mn][budget]["output_tokens"][i])
-            total_cost += tokens * prices[mn] / 1e6
-
-    accuracy = total_acc / n
-    cost_1kq = total_cost / n * 1000
-    score = arena_score(accuracy, cost_1kq)
-    return accuracy, cost_1kq, score, model_counts
 
 
 # ── Export submission ────────────────────────────────────────────────────────
@@ -469,7 +436,7 @@ def main():
         print(f"  Test-only: evaluating on {len(test_idx)}/{n} held-out queries")
         print(f"  (train={len(train_idx)}, test={len(test_idx)})")
 
-    # 5. Evaluate — two methods
+    # 5. Evaluate against sweep ground truth
     print("\n" + "=" * 70)
 
     if eval_indices is not None:
@@ -479,44 +446,25 @@ def main():
         eval_gi = [global_indices[i] for i in eval_idx_list]
         n_eval = len(eval_idx_list)
 
-        # Build filtered models_data for evaluate_from_training_data
-        eval_models_data = {}
-        for mn in models_data:
-            eval_models_data[mn] = {}
-            for budget in models_data[mn]:
-                eval_models_data[mn][budget] = {
-                    "accuracy": models_data[mn][budget]["accuracy"][eval_idx_list],
-                    "output_tokens": models_data[mn][budget]["output_tokens"][eval_idx_list],
-                }
-        # Re-index routes to match filtered data
-        filtered_routes = eval_routes
-
-        acc_a, cost_a, score_a, counts_a = evaluate_from_training_data(
-            filtered_routes, eval_models_data, prices)
-        print(f"[training_data.pkl]  Acc={acc_a*100:.2f}%  Cost/1kq=${cost_a:.4f}  Arena={score_a:.2f}  (n={n_eval})")
-
-        print("\nLoading sweep ground truth...")
-        acc_b, cost_b, score_b, counts_b, found = evaluate(
+        print("Loading sweep ground truth...")
+        acc, cost_1kq, score, counts, found = evaluate(
             eval_routes, eval_gi, prices)
-        print(f"[sweep files]        Acc={acc_b*100:.2f}%  Cost/1kq=${cost_b:.4f}  Arena={score_b:.2f}  (found {found}/{n_eval})")
+        print(f"Acc={acc*100:.2f}%  Cost/1kq=${cost_1kq:.4f}  Arena={score:.2f}  (found {found}/{n_eval})")
 
         # Model distribution
         print(f"\nModel distribution (test set, n={n_eval}):")
-        for mn, cnt in sorted(counts_a.items(), key=lambda x: -x[1]):
+        for mn, cnt in sorted(counts.items(), key=lambda x: -x[1]):
             print(f"  {mn:<20} {cnt:>5} ({cnt/n_eval*100:.1f}%)")
     else:
         # Full evaluation
-        acc_a, cost_a, score_a, counts_a = evaluate_from_training_data(routes, models_data, prices)
-        print(f"[training_data.pkl]  Acc={acc_a*100:.2f}%  Cost/1kq=${cost_a:.4f}  Arena={score_a:.2f}")
-
-        print("\nLoading sweep ground truth...")
-        acc_b, cost_b, score_b, counts_b, found = evaluate(routes, global_indices, prices)
-        print(f"[sweep files]        Acc={acc_b*100:.2f}%  Cost/1kq=${cost_b:.4f}  Arena={score_b:.2f}")
+        print("Loading sweep ground truth...")
+        acc, cost_1kq, score, counts, found = evaluate(routes, global_indices, prices)
+        print(f"Acc={acc*100:.2f}%  Cost/1kq=${cost_1kq:.4f}  Arena={score:.2f}")
         print(f"  (found {found}/{n} entries with accuracy in sweep files)")
 
         # Model distribution
         print(f"\nModel distribution:")
-        for mn, cnt in sorted(counts_a.items(), key=lambda x: -x[1]):
+        for mn, cnt in sorted(counts.items(), key=lambda x: -x[1]):
             print(f"  {mn:<20} {cnt:>5} ({cnt/n*100:.1f}%)")
 
     # Budget distribution (always on full routes)

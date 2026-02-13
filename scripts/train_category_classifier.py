@@ -27,7 +27,6 @@ from sklearn.ensemble import (
     GradientBoostingClassifier,
     ExtraTreesClassifier,
 )
-from sklearn.neural_network import MLPClassifier
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.naive_bayes import GaussianNB
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
@@ -100,22 +99,6 @@ def build_classifiers():
         "KNN_10": KNeighborsClassifier(
             n_neighbors=10, n_jobs=-1,
         ),
-        "MLP_256_128": Pipeline([
-            ("scaler", StandardScaler()),
-            ("clf", MLPClassifier(
-                hidden_layer_sizes=(256, 128), activation="relu",
-                max_iter=500, random_state=42, early_stopping=True,
-                validation_fraction=0.1,
-            )),
-        ]),
-        "MLP_512_256": Pipeline([
-            ("scaler", StandardScaler()),
-            ("clf", MLPClassifier(
-                hidden_layer_sizes=(512, 256), activation="relu",
-                max_iter=500, random_state=42, early_stopping=True,
-                validation_fraction=0.1,
-            )),
-        ]),
         "LDA": LinearDiscriminantAnalysis(),
         "GaussianNB": GaussianNB(),
     }

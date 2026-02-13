@@ -18,12 +18,11 @@ This enables R2-Router to discover that a powerful LLM with constrained output c
 ## Key Features
 
 - **Reasoning-based Routing**: Models each LLM as a quality-cost curve rather than a single point
-- **Multi-Model Routing**: Selects from a heterogeneous pool of 15 LLMs (0.6B to 235B parameters)
-- **Token Budget Optimization**: Searches over 16 token budgets {10, 20, 30, ..., 4000, default}
-- **Continuous Interpolation**: Approximates continuous quality-cost curves from sparse anchor points
-- **Plug-in Module**: Can be integrated with existing routers (e.g., UniRouter) as a drop-in enhancement
+- **Multi-Model Routing**: Selects from a heterogeneous pool of LLMs (0.6B to 235B parameters)
+- **Token Budget Optimization**: Searches over multiple token budgets + concise prompt
+- **KNN-based Prediction**: Uses cosine-distance-weighted KNN for quality prediction per (category, model, budget)
 - **Baseline Comparisons**: Includes CARROT (KNN, Linear), IRT (MIRT, NIRT), and UniRouter baselines
-- **Interactive Demo**: Gradio web interface for real-time routing demonstrations
+- **RouterArena Submission**: Submitted to the [RouterArena](https://github.com/RouteWorks/RouterArena) leaderboard
 
 ## Dataset: R2-Bench
 
@@ -40,139 +39,72 @@ R2-Bench raises the Oracle upper bound by **15% in AUDC** compared to prior sing
 
 ### Prerequisites
 
-- Python 3.10+
-- PyTorch 2.0+
-- CUDA-capable GPU (recommended for training)
+- Python 3.11+
+- scikit-learn, numpy, joblib
 
 ### Setup
 
 ```bash
-git clone https://github.com/anonymous/r2-router.git
-cd r2-router
+git clone https://github.com/jqxue1999/router.git
+cd router
 
-python -m venv .venv
-source .venv/bin/activate
+# Using uv (recommended)
+uv sync
 
-pip install -r requirements.txt
+# Or using pip
+pip install -e .
 ```
-
-## Quick Start
-
-### 1. IID Evaluation
-
-Run the complete training and evaluation pipeline:
-
-```bash
-bash main/run_experiment.sh
-```
-
-This will:
-1. Train R2-Router quality-cost predictors for all LLMs
-2. Train baseline methods (CARROT-KNN, CARROT-Linear, MIRT, NIRT)
-3. Evaluate routing across different lambda values
-4. Generate comparison metrics (AUDC, Peak Quality, QNC) and plots
-
-Results saved to `comparison_results/main/`
-
-### 2. Out-of-Distribution (OOD) Evaluation
-
-Test generalization to unseen query categories (leave-one-category-out):
-
-```bash
-# Default: hold out MMLU-Pro
-python ood_evaluation/run_ood.py
-
-# Quick test with 1 model
-python ood_evaluation/run_ood.py --quick
-
-# Hold out a different category
-python ood_evaluation/run_ood.py --category "lighteval/MATH/all"
-```
-
-Results saved to `comparison_results/ood_evaluation/{category}/`
-
-### 3. UniRouter Integration
-
-Compare R2-Router integrated with UniRouter for dynamic LLM pools:
-
-```bash
-bash unirouter/run_unirouter_experiment.sh
-```
-
-Results saved to `comparison_results/unirouter/`
-
-### 4. Interactive Demo
-
-```bash
-export OPENROUTER_API_KEY="your-api-key-here"
-cd demo && python app.py
-```
-
-Browser opens at `http://localhost:7860`
 
 ## Project Structure
 
 ```
 r2-router/
-├── main/                        # Main evaluation code
-│   ├── r2/                    # R2-Router predictor implementations
-│   │   ├── predictor.py         # PyTorch MLP (3-layer, [256,128,64])
-│   │   └── predictor_sklearn.py # Ridge regression (faster)
-│   ├── baselines/               # Baseline methods
-│   │   ├── carrot/              # CARROT-KNN, CARROT-Linear
-│   │   └── irt/                 # MIRT, NIRT
-│   ├── shared/                  # Shared utilities
-│   │   ├── dataset_manager.py   # Centralized train/test split
-│   │   ├── llm_loader.py        # LLM data loader
-│   │   ├── router_dataset.py    # Dataset wrapper
-│   │   └── utils.py             # Utility functions
-│   ├── evaluation/              # Evaluation scripts
-│   │   ├── compare_methods.py   # Method comparison
-│   │   └── results.py           # IID evaluation
-│   └── run_experiment.sh        # Automated pipeline
+├── scripts/                     # RouterArena pipeline
+│   ├── category_config.py         # Shared config (models, paths, categories)
+│   ├── route_and_eval.py          # Route queries + evaluate against sweep GT
+│   ├── route_knn_export.py        # Export RouterArena submission JSON (Global KNN)
+│   ├── sweep_lambda_global_knn.py # Lambda sweep with Global KNN routing
+│   ├── train_category_predictors.py # Train KNN quality + token predictors
+│   ├── train_category_classifier.py # Train SVM category classifier
+│   ├── build_category_training_data.py # Build training_data.pkl from sweep files
+│   ├── inference_budget_sweep.py   # Budget sweep inference (vLLM)
+│   ├── inference_routerarena.py    # vLLM/API inference engine
+│   ├── eval_sweep.py              # Evaluate sweep files (writes accuracy/cost)
+│   └── *.sbatch                   # SLURM job scripts
+├── main/                        # IID evaluation pipeline (R2-Bench)
+│   ├── r2/                        # R2-Router predictors (sklearn)
+│   ├── baselines/                 # CARROT, IRT baselines
+│   ├── shared/                    # DatasetManager, utils
+│   ├── evaluation/                # Compare methods
+│   └── run_experiment.sh          # Automated pipeline
+├── routerarena_submission/      # RouterArena submission files
+├── data_collection/             # R2-Bench data pipeline
 ├── ood_evaluation/              # Out-of-distribution evaluation
-│   ├── run_ood.py               # Main OOD script
-│   └── ood_dataset_manager.py   # Category-based splits
 ├── unirouter/                   # UniRouter integration
-│   ├── eval_compare.py          # UniRouter vs Uni-R2Router
-│   ├── uni_r2.py              # Uni-R2Router implementation
-│   └── unirouter_original.py    # Original UniRouter
-├── demo/                        # Interactive web demo
-│   ├── app.py                   # Gradio interface
-│   ├── router.py                # R2-Router routing logic
-│   ├── baselines.py             # Baseline routers
-│   ├── llm_client.py            # OpenRouter API client
-│   ├── judge.py                 # Quality evaluation
-│   └── config.py                # Configuration
-├── data/                        # Dataset (not included, see below)
-├── checkpoints/                 # Trained models (not included)
-└── README.md
+└── demo/                        # Interactive web demo (Gradio)
 ```
 
-## Training
+## Quick Start
 
-### Train R2-Router Predictors
+### RouterArena Evaluation
 
 ```bash
-# Ridge regression (fast, recommended)
-python -m main.r2.train_r2 \
-    --model_type sklearn \
-    --model "Model-Name" "0.85" "data/Model-Name.csv" "checkpoints/Model-Name"
+# Route and evaluate locally (against sweep ground truth)
+.venv/bin/python scripts/route_and_eval.py --lambda_val 0.98 --shrinkage_k 3.0
 
-# PyTorch MLP (higher accuracy)
-python -m main.r2.train_r2 \
-    --model_type torch_mlp \
-    --model "Model-Name" "0.85" "data/Model-Name.csv" "checkpoints/Model-Name"
+# Train KNN predictors
+sbatch scripts/train_predictors.sbatch
+
+# Export submission for RouterArena
+.venv/bin/python scripts/route_knn_export.py \
+    --models 235b ministral-3b gemini-flash --lambda_val 0.85 \
+    --export routerarena_submission/submission.json
 ```
 
-### Train Baselines
+### IID Evaluation (R2-Bench)
 
 ```bash
-# CARROT baselines (KNN + Linear)
-python -m main.baselines.carrot.train_carrot --model ...
-
-# IRT baselines (MIRT + NIRT)
-python -m main.baselines.irt.train_irt --model ...
+bash main/run_experiment.sh
 ```
 
 ## Evaluation Metrics
@@ -192,30 +124,6 @@ R2-Router achieves comparable quality at **4-5x lower cost** compared to reactiv
 | MIRT | 0.74 | 0.78 | 0.81 |
 | CARROT-L | 0.77 | 0.66 | 0.80 |
 | **R2-Router** | **0.80** | **0.29** | **0.81** |
-
-## Data Format
-
-Data files are not included due to size. To use your own data:
-
-1. **CSV files** (`data/{model}.csv`): One row per query (30,968 total)
-   - `prompts_id`, `key`, `original_prompt`
-   - `{budget}_score`: Quality score [0, 1] for each token budget
-   - `{budget}_count`: Actual token count used
-
-2. **Embeddings** (`data/prompt_embeddings.pkl`):
-   - NumPy array of shape `(30968, 768)`
-   - Generated using sentence-transformers (all-mpnet-base-v2)
-
-## Configuration
-
-Key parameters:
-
-- **lambda**: Cost-quality tradeoff coefficient [0, 1]
-  - lambda=0: Maximize quality only
-  - lambda->1: Minimize cost
-- **LLM Pool**: 15 models from 0.6B to 235B parameters
-- **Token Budgets**: 16 levels from 10 to 4000 tokens + default (unlimited)
-- **Train/Test Split**: 80/20 with seed=42
 
 ## Citation
 

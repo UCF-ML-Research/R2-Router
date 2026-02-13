@@ -8,7 +8,7 @@
 cd /home/ah872032.ucf/jiaqi/router
 
 echo "=== Test: force-mean-tokens (token pred = category mean always) ==="
-echo "Using checkpoint from 10% Ridge training"
+echo "Using checkpoint from 10% KNN training"
 echo ""
 
 # Compare with and without --force-mean-tokens

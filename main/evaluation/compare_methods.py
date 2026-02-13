@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 from ..shared.dataset_manager import DatasetManager
 from ..shared.llm_loader import load_llm
 from ..r2.predictor_sklearn import TokenPerformancePredictor
-from ..r2.predictor import route_scores
+from ..r2.predictor_sklearn import route_scores
 from ..baselines.carrot.baselines_carrot import CarrotKNNBaseline, CarrotLinearBaseline, route_baseline
 from ..baselines.irt.baselines_irt import IRTBaseline, NIRTBaseline
 

@@ -11,7 +11,7 @@
 #SBATCH --qos=qi855292.ucf
 
 echo "=========================================="
-echo "R2-Router: FULL-DATA Retrain Ridge(alpha=1.0) + Route (λ=0.999, sk=4.0, 4-model)"
+echo "R2-Router: FULL-DATA Retrain KNN + Route (λ=0.999, sk=4.0, 4-model)"
 echo "Job ID: $SLURM_JOB_ID | Node: $SLURMD_NODENAME"
 echo "Start: $(date)"
 echo "=========================================="
@@ -23,11 +23,8 @@ cd /home/ah872032.ucf/jiaqi/router
 mkdir -p logs
 
 echo ""
-echo "=== Step 1: FULL-DATA train predictors (Ridge alpha=1.0, no PCA, ridge-only) ==="
+echo "=== Step 1: FULL-DATA train KNN predictors ==="
 .venv/bin/python scripts/train_category_predictors.py \
-    --alpha 1.0 \
-    --ridge-only \
-    --pca 0 \
     --full
 
 echo ""

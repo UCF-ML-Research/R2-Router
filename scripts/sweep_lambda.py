@@ -83,16 +83,8 @@ def load_predictors():
         if cat_name not in results:
             continue
         for model_name, minfo in results[cat_name]["models"].items():
-            arch = minfo.get("best_architecture", "Ridge")
-            if arch == "KNN":
-                q_r2 = minfo.get("KNN_cv_r2", 0.0)
-                t_r2 = minfo.get("knn_token_cv_r2", 0.0)
-            elif arch == "MLP":
-                q_r2 = minfo.get("MLP_cv_r2", 0.0)
-                t_r2 = minfo.get("mlp_token_cv_r2", 0.0)
-            else:
-                q_r2 = minfo.get("Ridge_cv_r2", 0.0)
-                t_r2 = minfo.get("ridge_token_cv_r2", 0.0)
+            q_r2 = minfo.get("KNN_cv_r2", 0.0)
+            t_r2 = minfo.get("knn_token_cv_r2", 0.0)
             confidence[cat_name][model_name] = {
                 "quality_r2": max(0.0, q_r2),
                 "token_r2": t_r2,
@@ -180,28 +172,10 @@ def route(embeddings, categories, quality_preds, token_preds, confidence,
     return routes
 
 
-# ── Evaluate using training_data.pkl ─────────────────────────────────────────
-
-def evaluate_from_training_data(routes, models_data, prices):
-    """Evaluate using ground-truth accuracy + output_tokens from training_data.pkl.
-
-    Returns: (accuracy, cost_per_1kq, model_counts)
-    """
-    n = len(routes)
-    total_acc = 0.0
-    total_cost = 0.0
-    model_counts = defaultdict(int)
-
-    for i, (mn, budget) in enumerate(routes):
-        model_counts[mn] += 1
-        if mn in models_data and budget in models_data[mn]:
-            total_acc += float(models_data[mn][budget]["accuracy"][i])
-            tokens = float(models_data[mn][budget]["output_tokens"][i])
-            total_cost += tokens * prices[mn] / 1e6
-
-    accuracy = total_acc / n
-    cost_1kq = total_cost / n * 1000
-    return accuracy, cost_1kq, model_counts
+# TODO: Evaluation should use real cost from sweep files (per-query accuracy + cost
+# from eval_sweep.py output), not output_tokens * price which is incorrect.
+# This checkpoint-based sweep script needs an evaluate_from_sweep_files() function
+# that loads the sweep ground truth JSON files directly.
 
 
 # ── Main ─────────────────────────────────────────────────────────────────────
@@ -274,13 +248,22 @@ def main():
     print(f"  Setup done in {time.time()-start:.1f}s\n", flush=True)
 
     # 4. Sweep lambdas
+    # TODO: Need evaluate_from_sweep_files() that loads real accuracy + cost from
+    # sweep ground truth JSON files. See route_and_eval.py for reference.
+    raise NotImplementedError(
+        "evaluate_from_training_data was removed (used output_tokens * price which is wrong). "
+        "Use scripts/route_and_eval.py for evaluation, or implement evaluate_from_sweep_files() "
+        "that loads real cost from sweep ground truth JSON files."
+    )
+
     results = []
     for lam in args.lambdas:
         t0 = time.time()
         routes = route(embeddings, categories, quality_preds, token_preds, confidence,
                        prices, lam, args.shrinkage_k, mean_acc, mean_tokens,
                        allowed_models=allowed_models, excluded_budgets=excluded_budgets)
-        accuracy, cost_1kq, model_counts = evaluate_from_training_data(routes, models_data, prices)
+        # TODO: replace with evaluate_from_sweep_files(routes, ...)
+        accuracy, cost_1kq, model_counts = 0.0, 0.0, defaultdict(int)
         elapsed = time.time() - t0
 
         scores = {}

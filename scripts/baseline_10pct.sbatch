@@ -7,13 +7,13 @@
 #SBATCH -o logs/baseline10_%j.log
 cd /home/ah872032.ucf/jiaqi/router
 
-echo "=== Baseline comparison: Ridge 10% train, original params ==="
+echo "=== Baseline comparison: KNN 10% train ==="
 echo "Training with --test-size 0.9 (10% train, 90% test)..."
 echo ""
 
-# Train Ridge with 10% data (same as original baseline method)
+# Train KNN with 10% data
 .venv/bin/python scripts/train_category_predictors.py \
-    --ridge-only --test-size 0.9
+    --test-size 0.9
 
 echo ""
 echo "=== Evaluating routing with original baseline params ==="
