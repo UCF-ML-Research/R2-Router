@@ -30,17 +30,30 @@ def extract_all_embeddings(csv_path, output_path, encoder_name, max_length, batc
     prompts = df["original_prompt"].tolist()
     num_samples = len(prompts)
 
-    # 初始化 vLLM 模型（支持多卡）
+    # 初始化 vLLM 模型（支持多卡，兼容新旧 API）
     print(f"Loading model {encoder_name} with TP={tensor_parallel_size}, max_length={max_length}")
-    llm = LLM(
-        model=encoder_name,
-        task="embed",
-        tensor_parallel_size=tensor_parallel_size,
-        max_model_len=max_length,
-        dtype="bfloat16",
-        trust_remote_code=True,
-        disable_log_stats=True,
-    )
+    import inspect
+    llm_params = inspect.signature(LLM.__init__).parameters
+    if "runner" in llm_params:
+        # vLLM >= 0.15: use runner="pooling"
+        llm = LLM(
+            model=encoder_name,
+            runner="pooling",
+            tensor_parallel_size=tensor_parallel_size,
+            max_model_len=max_length,
+            dtype="bfloat16",
+            trust_remote_code=True,
+        )
+    else:
+        # vLLM < 0.15: use task="embed"
+        llm = LLM(
+            model=encoder_name,
+            task="embed",
+            tensor_parallel_size=tensor_parallel_size,
+            max_model_len=max_length,
+            dtype="bfloat16",
+            trust_remote_code=True,
+        )
 
     all_embeddings = []
     for i in tqdm(range(0, num_samples, batch_size), desc="Extracting embeddings"):

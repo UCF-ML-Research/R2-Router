@@ -12,7 +12,7 @@ model = Mistral3ForConditionalGeneration.from_pretrained(
     model_id,
     torch_dtype=torch.bfloat16,
     device_map="auto",  # 自动分配 GPU
-    cache_dir="/blue/sgao1/ji757406.ucf/hf_cache"
+    cache_dir="/orange/qi855292.ucf/ah872032.ucf/cache/huggingface"
 )
 
 prompt = "Explain why the sky is blue."

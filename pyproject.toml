@@ -1,0 +1,20 @@
+[project]
+name = "router"
+version = "0.1.0"
+description = "R2-Router: LLM routing with cost-performance optimization"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "torch>=2.0",
+    "vllm>=0.8",
+    "pandas",
+    "numpy",
+    "scikit-learn",
+    "sentence-transformers",
+    "tqdm",
+    "joblib",
+    "matplotlib",
+    "seaborn",
+    "gradio",
+    "plotly",
+]

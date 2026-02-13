@@ -1,5 +1,0 @@
-model_name: sentence-transformers/all-roberta-large-v1
-model_key: all_roberta_large
-n_prompts: 30968
-embedding_dim: 1024
-dtype: float32

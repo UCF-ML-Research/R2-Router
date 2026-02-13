@@ -82,3 +82,17 @@ ood_evaluation/category_splits/
 
 # Jupyter
 *.ipynb_checkpoints/
+
+# Symlinks (HiPerGator-specific)
+.venv
+data
+.python-version
+
+# Generated images
+*.png
+
+# Claude Code
+.claude/
+
+# UV lock
+uv.lock

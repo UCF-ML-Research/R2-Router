@@ -13,7 +13,7 @@ from prompt_template import build_prompt
 # -----------------
 # 配置
 # -----------------
-cache_dir = "/blue/sgao1/ji757406.ucf/hf_cache/"
+cache_dir = "/orange/qi855292.ucf/ah872032.ucf/cache/huggingface/"
 os.makedirs(cache_dir, exist_ok=True)
 
 MODEL_NAME = "Qwen/Qwen3-Next-80B-A3B-Instruct"

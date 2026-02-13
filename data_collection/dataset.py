@@ -71,7 +71,7 @@ def debug_csv_write(df, output_file, debug_dir="./debug_logs"):
 # -----------------
 # 配置
 # -----------------
-cache_dir = "/blue/sgao1/ji757406.ucf/hf_cache/"
+cache_dir = "/orange/qi855292.ucf/ah872032.ucf/cache/huggingface/"
 os.makedirs(cache_dir, exist_ok=True)
 
 # 全局变量
