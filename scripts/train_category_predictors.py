@@ -30,7 +30,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from category_config import (
     TRAINING_DATA_PATH, CHECKPOINT_DIR,
     CATEGORY_NAMES, NUM_CATEGORIES,
-    MODELS, get_budgets,
+    MODELS, get_budgets, ROUTER_DATA_10_PATH,
 )
 
 
@@ -48,6 +48,8 @@ def main():
                         help="Train final model on ALL data (no held-out test set)")
     parser.add_argument("--test-size", type=float, default=0.2,
                         help="Fraction of data for held-out test (default: 0.2)")
+    parser.add_argument("--sub10", action="store_true",
+                        help="Train only on sub_10 queries (RouterArena 10%% split)")
     args = parser.parse_args()
 
     log(f"=== Category-Aware KNN Predictor Training (K={args.k}-fold CV) ===")
@@ -55,6 +57,8 @@ def main():
         log(f"PCA: {args.pca} components per category")
     if args.full:
         log(f"FULL MODE: training final model on ALL data (no held-out test)")
+    if args.sub10:
+        log(f"SUB10 MODE: training only on RouterArena sub_10 queries")
     log("")
 
     # 1. Load training data
@@ -71,7 +75,18 @@ def main():
 
     # 2. Global train/test split
     all_idx = np.arange(n_queries)
-    if args.full:
+    global_indices = data["global_indices"]  # [str, ...]
+    if args.sub10:
+        # Use RouterArena sub_10 as training set, rest as test
+        with open(ROUTER_DATA_10_PATH) as f:
+            sub10_data = json.load(f)
+        sub10_gis = set(e["global index"] for e in sub10_data)
+        gi_to_idx = {gi: i for i, gi in enumerate(global_indices)}
+        train_idx = np.array(sorted([gi_to_idx[gi] for gi in sub10_gis if gi in gi_to_idx]))
+        test_idx = np.array(sorted(set(all_idx.tolist()) - set(train_idx.tolist())))
+        train_set = set(train_idx.tolist())
+        log(f"  SUB10 MODE: {len(train_idx)} train, {len(test_idx)} test")
+    elif args.full:
         train_idx = all_idx.copy()
         test_idx = np.array([], dtype=int)
         train_set = set(train_idx.tolist())

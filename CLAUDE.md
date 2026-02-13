@@ -55,12 +55,42 @@ S = ((1 + β) × A × C) / (β × A + C) × 100
 
 ## Current Status (Feb 13, 2026)
 
+### Feb 13 Submission (Current Best)
+
+Submitted to RouterArena PR #68 on branch `r2-router-submission`.
+Uses **Global KNN** routing (trained on sub_10 only, ~809 queries).
+
+| | Value |
+|--|---|
+| **Method** | Global KNN (cosine, distance-weighted) |
+| **Models** | 6 (235b, 80b, 30b, coder-next, gemini-flash, haiku) |
+| **Budgets** | 4 (concise, budget_200, budget_400, budget_800) |
+| **λ** | 0.999 |
+| **K** | 80 |
+| **Accuracy** | 71.16% |
+| **Cost/1kq** | $0.035 |
+| **Arena(β=0.1)** | **71.93** |
+
+Submission files:
+- `routerarena_submission/r2-router-feb13.json` — 12,445 entries (8400 regular + 4045 optimality)
+- Export script: `scripts/route_knn_export.py`
+
+```bash
+# Reproduce
+.venv/bin/python scripts/route_knn_export.py \
+    --models 235b 80b 30b coder-next gemini-flash haiku \
+    --exclude-budgets budget_10 budget_20 budget_40 budget_80 budget_150 budget_1500 budget_unlimited \
+    --lambda_val 0.999 --k 80 \
+    --export routerarena_submission/r2-router-feb13.json
+```
+
 ### Feb 10 Submission (Baseline)
 
 Submitted to RouterArena via commit `7788685` in RouterArena repo.
 
 | | Value |
 |--|---|
+| **Method** | Category-Aware KNN (per-category predictors) |
 | **Models** | 4 (235b=91.8%, gemini-flash=5.2%, 80b=2.9%, haiku=0.1%) |
 | **λ** | 0.999 |
 | **Shrinkage** | No |
@@ -69,10 +99,19 @@ Submitted to RouterArena via commit `7788685` in RouterArena repo.
 
 Submitted file backed up at: `routerarena_submission/r2-router-feb10-submitted.json`
 
-### Current Checkpoint
+### Evaluation Protocol
 
-Trained with `--full` (all 8400 queries, KNN predictors, no held-out test set).
-**Cannot reliably evaluate locally** — any local metrics are optimistic (training set evaluation).
+RouterArena 是开源平台，所有人都能拿到 full query set 和 answers。官方只提供 sub_10（~840 queries，10%）作为训练集，他们在 full 8400 queries 上验证。**用 full data 训练 = 作弊。**
+
+- **只能用 sub_10 训练，full set 测试。** 不做 CV，不做 full training，任何时候都不用 full data。
+- 提交也必须用 sub_10 训练的模型。
+
+### Optimization Findings (Feb 13)
+
+- **Semi-supervised methods all underperform KNN**: Label Propagation (71.36), Cluster-Then-Route (70.79), Neighbor Voting (70.18) — all worse than KNN baseline (71.88).
+- **Global KNN > Category-Aware KNN**: With only ~80 training samples per category, global KNN with k=80 generalizes better.
+- **6-model pool > 4-model pool**: Adding 30b and coder-next improves routing diversity.
+- **Oracle upper bound**: 84.55 Arena (perfect per-query routing, 4 models, concise-only). Current gap: ~12.6pp.
 
 ### Budget Sweep Data: COMPLETE
 
@@ -122,9 +161,14 @@ checkpoints/category_router/           # Active checkpoint
 └── train_test_split.pkl               # Train/test indices
 
 routerarena_submission/                # Submission files
+├── r2-router-feb13.json               # Feb 13 submission (current best)
 ├── r2-router-feb10-submitted.json     # Feb 10 baseline
 ├── routerarena_embeddings.pkl         # 8400 query embeddings (Qwen3-0.6B)
 └── routerarena_robustness_embeddings.pkl
+
+experiments/                           # Experiment scripts
+├── quick_semisupervised.py            # KNN/LP/Cluster/NV comparison
+└── semisupervised_routing.py          # Full semi-supervised routing
 
 main/                                  # IID evaluation pipeline (R2-Bench)
 ├── r2/                                # R2-Router predictors (sklearn)
@@ -138,6 +182,13 @@ data_collection/                       # R2-Bench data pipeline
 ## Key Commands
 
 ```bash
+# Generate submission (Global KNN, sub_10 training)
+.venv/bin/python scripts/route_knn_export.py \
+    --models 235b 80b 30b coder-next gemini-flash haiku \
+    --exclude-budgets budget_10 budget_20 budget_40 budget_80 budget_150 budget_1500 budget_unlimited \
+    --lambda_val 0.999 --k 80 \
+    --export routerarena_submission/r2-router-feb13.json
+
 # Route and evaluate locally (against sweep ground truth)
 .venv/bin/python scripts/route_and_eval.py --lambda_val 0.98 --shrinkage_k 3.0
 .venv/bin/python scripts/route_and_eval.py --lambda_val 0.999 --shrinkage_k 0 \
@@ -186,9 +237,9 @@ scancel JOBID                  # Cancel
 
 ## Known Issues
 
-- **Predictor trained on full data** (`--full`): Current checkpoint uses all 8400 queries for training. Local eval is optimistic. Must retrain with test split or rely on RouterArena eval.
-- **Token predictor is catastrophic**: R2 avg = -19.7. Shrinkage binary switch (token_R2 > 0 → predictor, else → mean) effectively disables it for 85.7% of cases.
-- **93% binary targets**: Accuracy values are mostly 0/1 — classification may outperform regression.
+- **Sub_10 training data is the bottleneck**: Only ~809 training queries. Semi-supervised methods (LP, Clustering, NV) cannot close the gap. Oracle upper bound is 84.55 Arena.
+- **Token predictor is catastrophic**: R2 avg = -19.7. Global KNN approach side-steps this by using λ=0.999 (risk formula dominated by cost penalty, not token prediction).
+- **93% binary targets**: Accuracy values are mostly 0/1 — classification may outperform regression. Potential Phase 2 improvement.
 - **code_accuracy memory leak**: LiveCodeBench code eval causes OOM after 2-3 models at 64gb. Use per-model eval jobs.
 - **Budget prompt is counter-productive**: Concise prompt (median=6 tokens) beats budget=10 (median=36 tokens) for controlling output length.
 - **Node c1000a-s15** has GPU issues — exclude with `#SBATCH --exclude=c1000a-s15`
