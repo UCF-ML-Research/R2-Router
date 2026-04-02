@@ -64,6 +64,11 @@ This working repository contains research code plus local-only assets used durin
 
 The RouterArena-oriented scripts preserve the current local defaults, but can now be redirected with environment variables such as `R2_SWEEP_ROOT`, `R2_ROUTER_DATA_PATH`, and `R2_CHECKPOINT_DIR`.
 
+Public artifacts:
+
+- RouterArena data: [JiaqiXue/r2-router-routerarena-data](https://huggingface.co/datasets/JiaqiXue/r2-router-routerarena-data)
+- RouterArena checkpoints: [JiaqiXue/r2-router-routerarena-checkpoints](https://huggingface.co/JiaqiXue/r2-router-routerarena-checkpoints)
+
 ## Project Structure
 
 ```
