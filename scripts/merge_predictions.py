@@ -18,28 +18,22 @@ from collections import defaultdict
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+from scripts.category_config import MODELS, SWEEP_ROOT
+
 
 def log(msg):
     print(f"[{datetime.now().strftime('%H:%M:%S')}] {msg}", flush=True)
 
 
-SWEEP_ROOT = "/orange/qi855292.ucf/ah872032.ucf/budget_sweep"
-PREDICTIONS_DIR = "/home/ah872032.ucf/jiaqi/RouterArena/router_inference/predictions"
+PREDICTIONS_DIR = os.getenv(
+    "R2_PREDICTIONS_DIR",
+    "/home/ji757406.ucf/RouterArena/router_inference/predictions",
+)
 ROUTER_FILE = os.path.join(PREDICTIONS_DIR, "r2-router.json")
 
-# Map RouterArena model name -> sweep directory name
 MODEL_DIR_MAP = {
-    "qwen/qwen3-235b-a22b-2507": "235b",
-    "qwen/qwen3-next-80b-a3b-instruct": "80b",
-    "qwen/qwen3-30b-a3b-instruct-2507": "30b",
-    "Qwen/Qwen3-Coder-Next": "Qwen3-Coder-Next",
-    "qwen/qwen3-coder-30b-a3b-instruct": "coder-30b",
-    "mistralai/ministral-3b": "ministral-3b",
-    "mistralai/ministral-8b": "ministral-8b",
-    "mistralai/ministral-14b": "ministral-14b",
-    "gpt-4o": "gpt4o",
-    "gemini-2.5-flash": "gemini-flash",
-    "claude-3-haiku-20240307": "haiku",
+    cfg["ra_name"]: os.path.basename(cfg["sweep_dir"].rstrip("/"))
+    for cfg in MODELS.values()
 }
 
 

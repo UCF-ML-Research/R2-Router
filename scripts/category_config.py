@@ -18,15 +18,48 @@ import os
 # Paths
 # ============================================================================
 
-SWEEP_ROOT = "/orange/qi855292.ucf/ah872032.ucf/budget_sweep"
-EMBEDDINGS_PATH = "/home/ah872032.ucf/jiaqi/router/routerarena_submission/routerarena_embeddings.pkl"
-ROBUSTNESS_EMBEDDINGS_PATH = "/home/ah872032.ucf/jiaqi/router/routerarena_submission/routerarena_robustness_embeddings.pkl"
-ROUTER_DATA_PATH = "/home/ah872032.ucf/jiaqi/RouterArena/dataset/router_data.json"
-ROUTER_DATA_10_PATH = "/home/ah872032.ucf/jiaqi/RouterArena/dataset/router_data_10.json"
-ROBUSTNESS_DATA_PATH = "/home/ah872032.ucf/jiaqi/RouterArena/dataset/router_robustness.json"
-MODEL_COST_PATH = "/home/ah872032.ucf/jiaqi/RouterArena/model_cost/model_cost.json"
-TRAINING_DATA_PATH = "/orange/qi855292.ucf/ah872032.ucf/category_router/training_data.pkl"
-CHECKPOINT_DIR = "/home/ah872032.ucf/jiaqi/router/checkpoints/category_router"
+REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+
+def _env_path(name: str, default: str) -> str:
+    """Return an environment-overridable path while preserving local defaults."""
+    return os.path.expanduser(os.getenv(name, default))
+
+
+ROUTERARENA_ROOT = _env_path("R2_ROUTERARENA_ROOT", "/home/ji757406.ucf/RouterArena")
+SWEEP_ROOT = _env_path("R2_SWEEP_ROOT", "/orange/qi855292.ucf/ji757406.ucf/budget_sweep")
+EMBEDDINGS_PATH = _env_path(
+    "R2_EMBEDDINGS_PATH",
+    os.path.join(REPO_ROOT, "routerarena_submission", "routerarena_embeddings.pkl"),
+)
+ROBUSTNESS_EMBEDDINGS_PATH = _env_path(
+    "R2_ROBUSTNESS_EMBEDDINGS_PATH",
+    os.path.join(REPO_ROOT, "routerarena_submission", "routerarena_robustness_embeddings.pkl"),
+)
+ROUTER_DATA_PATH = _env_path(
+    "R2_ROUTER_DATA_PATH",
+    os.path.join(ROUTERARENA_ROOT, "dataset", "router_data.json"),
+)
+ROUTER_DATA_10_PATH = _env_path(
+    "R2_ROUTER_DATA_10_PATH",
+    os.path.join(ROUTERARENA_ROOT, "dataset", "router_data_10.json"),
+)
+ROBUSTNESS_DATA_PATH = _env_path(
+    "R2_ROBUSTNESS_DATA_PATH",
+    os.path.join(ROUTERARENA_ROOT, "dataset", "router_robustness.json"),
+)
+MODEL_COST_PATH = _env_path(
+    "R2_MODEL_COST_PATH",
+    os.path.join(ROUTERARENA_ROOT, "model_cost", "model_cost.json"),
+)
+TRAINING_DATA_PATH = _env_path(
+    "R2_TRAINING_DATA_PATH",
+    "/orange/qi855292.ucf/ji757406.ucf/category_router/training_data.pkl",
+)
+CHECKPOINT_DIR = _env_path(
+    "R2_CHECKPOINT_DIR",
+    os.path.join(REPO_ROOT, "checkpoints", "category_router"),
+)
 
 # ============================================================================
 # Categories

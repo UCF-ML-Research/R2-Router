@@ -1,6 +1,6 @@
-# R2-Router: A New Paradigm for LLM Routing with Reasoning
+# R2-Router for RouterArena
 
-**R2-Router** introduces *reasoning* into LLM routing. Instead of treating each LLM as a fixed quality-cost point, R2-Router reasons about how quality varies with output length, jointly selecting the best LLM **and** token budget. This transforms routing from selecting among points to searching over quality-cost curves, achieving state-of-the-art performance at **4-5x lower cost**.
+**R2-Router** introduces *reasoning* into LLM routing. Instead of treating each LLM as a fixed quality-cost point, R2-Router reasons about how quality varies with output length, jointly selecting the best LLM **and** token budget. This transforms routing from selecting among points to searching over quality-cost curves.
 
 > Under review at ICML 2026.
 
@@ -24,16 +24,14 @@ This enables R2-Router to discover that a powerful LLM with constrained output c
 - **Baseline Comparisons**: Includes CARROT (KNN, Linear), IRT (MIRT, NIRT), and UniRouter baselines
 - **RouterArena Submission**: Submitted to the [RouterArena](https://github.com/RouteWorks/RouterArena) leaderboard
 
-## Dataset: R2-Bench
+## Scope
 
-R2-Bench is the first LLM routing dataset capturing behavior across diverse output length budgets:
-- **30,968 queries** across **20 categories** from 6 benchmarks
-- **6 benchmarks**: MMLU-Pro, OpenHermes, MATH, GPQA, MuSR, RAGBench
-- **15 LLMs**: From Qwen3-0.6B to Qwen3-235B (general-purpose and domain-specific)
-- **16 token budgets**: {10, 20, 30, 40, 50, 80, 100, 150, 200, 300, 500, 800, 1200, 2000, 4000, default}
-- Quality scored by Qwen3-80B-Instruct (validated against 30 human annotators, Pearson r=0.82)
+This public release focuses on the **RouterArena branch** of R2-Router:
 
-R2-Bench raises the Oracle upper bound by **15% in AUDC** compared to prior single-response datasets.
+- category-aware routing on RouterArena queries
+- per-model, per-budget quality prediction
+- offline evaluation against sweep ground truth
+- RouterArena-format submission export
 
 ## Installation
 
@@ -55,6 +53,17 @@ uv sync
 pip install -e .
 ```
 
+## Public Release Notes
+
+This working repository contains research code plus local-only assets used during development. For the public artifact:
+
+- keep `scripts/`, `ood_evaluation/`, and `unirouter/`
+- exclude `demo/`, `old_demo/`, `hf_space/`, and `hf_upload/`
+- do not commit checkpoints, submission JSONs, local logs, or sweep outputs
+- configure dataset and sweep locations through environment variables in [.env.example](/home/ji757406.ucf/router/.env.example)
+
+The RouterArena-oriented scripts preserve the current local defaults, but can now be redirected with environment variables such as `R2_SWEEP_ROOT`, `R2_ROUTER_DATA_PATH`, and `R2_CHECKPOINT_DIR`.
+
 ## Project Structure
 
 ```
@@ -71,17 +80,12 @@ r2-router/
 │   ├── inference_routerarena.py    # vLLM/API inference engine
 │   ├── eval_sweep.py              # Evaluate sweep files (writes accuracy/cost)
 │   └── *.sbatch                   # SLURM job scripts
-├── main/                        # IID evaluation pipeline (R2-Bench)
-│   ├── r2/                        # R2-Router predictors (sklearn)
-│   ├── baselines/                 # CARROT, IRT baselines
-│   ├── shared/                    # DatasetManager, utils
-│   ├── evaluation/                # Compare methods
-│   └── run_experiment.sh          # Automated pipeline
-├── routerarena_submission/      # RouterArena submission files
-├── data_collection/             # R2-Bench data pipeline
+├── routerarena_submission/      # Local submission/embedding artifacts (not for git release)
 ├── ood_evaluation/              # Out-of-distribution evaluation
 ├── unirouter/                   # UniRouter integration
-└── demo/                        # Interactive web demo (Gradio)
+├── DATA_RELEASE.md              # Data packaging and licensing guidance
+├── reproduce/                   # Minimal reproduction entrypoints
+└── artifacts/                   # Notes for assembling the public artifact
 ```
 
 ## Quick Start
@@ -101,11 +105,32 @@ sbatch scripts/train_predictors.sbatch
     --export routerarena_submission/submission.json
 ```
 
-### IID Evaluation (R2-Bench)
+### RouterArena Reproduction
+
+For the public RouterArena branch, prepare the released data package and set the paths in [.env.example](/home/ji757406.ucf/router/.env.example).
+
+Minimum required environment variables:
 
 ```bash
-bash main/run_experiment.sh
+export R2_SWEEP_ROOT=/path/to/routerarena_data_release/budget_sweep
+export R2_TRAINING_DATA_PATH=/path/to/routerarena_data_release/category_router/training_data.pkl
+export R2_EMBEDDINGS_PATH=/path/to/routerarena_data_release/embeddings/routerarena_embeddings.pkl
+export R2_ROUTER_DATA_PATH=/path/to/routerarena_data_release/routerarena_meta/router_data.json
+export R2_ROUTER_DATA_10_PATH=/path/to/routerarena_data_release/routerarena_meta/router_data_10.json
+export R2_MODEL_COST_PATH=/path/to/routerarena_data_release/routerarena_meta/model_cost.json
 ```
+
+Then run:
+
+```bash
+bash reproduce/routerarena_train.sh
+bash reproduce/routerarena_eval.sh
+```
+
+The helper scripts are:
+
+- [routerarena_train.sh](/home/ji757406.ucf/router/reproduce/routerarena_train.sh): builds consolidated training data and trains RouterArena predictors
+- [routerarena_eval.sh](/home/ji757406.ucf/router/reproduce/routerarena_eval.sh): runs offline evaluation and exports a submission JSON
 
 ## Evaluation Metrics
 
@@ -117,17 +142,15 @@ Following the evaluation protocol from UniRouter (Jitkrittum et al., 2025):
 
 ## Main Results
 
-R2-Router achieves comparable quality at **4-5x lower cost** compared to reactive baselines:
+R2-Router is released here as a RouterArena-oriented routing system with:
 
-| Method | AUDC | QNC | Peak Quality |
-|--------|------|-----|-------------|
-| MIRT | 0.74 | 0.78 | 0.81 |
-| CARROT-L | 0.77 | 0.66 | 0.80 |
-| **R2-Router** | **0.80** | **0.29** | **0.81** |
+- per-category KNN quality predictors
+- token-aware routing objectives
+- Global KNN submission export
 
 ## Citation
 
-If you use this code or R2-Bench, please cite:
+If you use this code, please cite:
 
 ```bibtex
 @inproceedings{r2router2026,
@@ -141,6 +164,14 @@ If you use this code or R2-Bench, please cite:
 ## License
 
 MIT License
+
+## Data And Artifact Release
+
+This repository does not yet bundle the full research dataset. Use the guidance in [DATA_RELEASE.md](/home/ji757406.ucf/router/DATA_RELEASE.md) and [README.md](/home/ji757406.ucf/router/artifacts/README.md) to package a public release safely:
+
+- publish code separately from large data artifacts
+- verify redistribution rights for third-party benchmark content
+- release derived metadata, splits, and reconstructions when raw prompts/answers cannot be mirrored directly
 
 ## Acknowledgments
 

@@ -27,7 +27,7 @@ from joblib import load as joblib_load
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from category_config import (
     MODELS, CHECKPOINT_DIR, CATEGORY_NAMES,
-    TRAINING_DATA_PATH, MODEL_COST_PATH, ROUTER_DATA_PATH,
+    TRAINING_DATA_PATH, MODEL_COST_PATH, ROUTER_DATA_10_PATH,
 )
 
 
@@ -295,9 +295,8 @@ def export_submission(routes, global_indices, data, output_path):
         })
 
     # Load router_data_10 for optimality queries (809 queries)
-    router_data_10_path = ROUTER_DATA_PATH.replace("router_data.json", "router_data_10.json")
-    if os.path.exists(router_data_10_path):
-        with open(router_data_10_path) as f:
+    if os.path.exists(ROUTER_DATA_10_PATH):
+        with open(ROUTER_DATA_10_PATH) as f:
             router_data_10 = json.load(f)
 
         # Build map: gi -> chosen model for regular routing

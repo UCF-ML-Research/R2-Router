@@ -15,37 +15,12 @@ import os
 import time
 from collections import defaultdict
 
+from category_config import MODEL_COST_PATH, MODELS, SWEEP_ROOT
 
-SWEEP_ROOT = "/orange/qi855292.ucf/ah872032.ucf/budget_sweep"
-COST_FILE = "/home/ah872032.ucf/jiaqi/RouterArena/model_cost/model_cost.json"
-
-# Short name -> RouterArena cost key
-MODEL_COST_KEY = {
-    "235b": "qwen/qwen3-235b-a22b-2507",
-    "80b": "qwen/qwen3-next-80b-a3b-instruct",
-    "30b": "qwen/qwen3-30b-a3b-instruct-2507",
-    "coder-next": "Qwen/Qwen3-Coder-Next",
-    "coder-30b": "qwen/qwen3-coder-30b-a3b-instruct",
-    "ministral-3b": "mistralai/ministral-3-3b-2512",
-    "ministral-8b": "mistralai/ministral-3-8b-2512",
-    "ministral-14b": "mistralai/ministral-3-14b-2512",
-    "gpt4o": "gpt-4o",
-    "gemini-flash": "gemini-2.0-flash-001",
-    "haiku": "claude-haiku-4.5",
-    "gemma-3n-e4b": "google/gemma-3n-e4b-it",
-}
-
-# Short name -> sweep directory name
+MODEL_COST_KEY = {name: cfg["cost_key"] for name, cfg in MODELS.items()}
 MODEL_SWEEP_DIR = {
-    "235b": "235b",
-    "80b": "80b",
-    "30b": "30b",
-    "coder-next": "Qwen3-Coder-Next",
-    "coder-30b": "coder-30b",
-    "ministral-3b": "ministral-3b",
-    "ministral-8b": "ministral-8b",
-    "ministral-14b": "ministral-14b",
-    "gemma-3n-e4b": "gemma-3n-e4b",
+    name: os.path.basename(cfg["sweep_dir"].rstrip("/"))
+    for name, cfg in MODELS.items()
 }
 
 BUDGET_TO_FILE = {
@@ -122,7 +97,7 @@ def main():
         print(f"  Excluding models: {args.exclude_models}")
 
     # Load costs
-    with open(COST_FILE) as f:
+    with open(MODEL_COST_PATH) as f:
         costs = json.load(f)
 
     # Step 1: Determine which sweep files to load
