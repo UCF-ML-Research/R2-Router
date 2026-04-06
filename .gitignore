@@ -84,6 +84,11 @@ old_demo/
 hf_space/
 hf_upload/
 
+# r2_router package: track everything (checkpoints are only 1.3MB)
+!r2_router/
+!r2_router/**
+r2_router/__pycache__/
+
 # Results and Outputs
 comparison_results/
 plots/

@@ -1,161 +1,144 @@
-# R2-Router for RouterArena
+# R2-Router
 
-**R2-Router** introduces *reasoning* into LLM routing. Instead of treating each LLM as a fixed quality-cost point, R2-Router reasons about how quality varies with output length, jointly selecting the best LLM **and** token budget. This transforms routing from selecting among points to searching over quality-cost curves.
+**R2-Router** introduces *reasoning* into LLM routing. Instead of treating each LLM as a fixed quality-cost point, R2-Router reasons about how quality varies with output length, jointly selecting the best LLM **and** token budget.
 
 > Under review at ICML 2026.
 
-## Overview
+## How It Works
 
-Existing LLM routers assume each model has a single fixed quality-cost profile per query. This causes them to exclude powerful LLMs when estimated cost exceeds the budget, missing the opportunity that these LLMs could still deliver high quality with shorter outputs.
+Given a query, R2-Router:
+1. **Embeds** the query using Qwen3-0.6B (1024d)
+2. **Predicts** quality at each (model, budget) using per-LLM Ridge regressors
+3. **Routes** by maximizing: `risk = (1-λ) × quality - λ × cost`
+4. **Generates** a response from the selected LLM with budget-constrained prompt
 
-R2-Router addresses this by:
-1. **Reasoning about cost-dependent quality**: Predicting how each LLM's quality varies with output length
-2. **Routing on curves, not points**: Searching over all (LLM, token budget) combinations
-3. **Enforcing budget via instructions**: Using length-constrained prompts (e.g., "use at most K tokens")
-
-This enables R2-Router to discover that a powerful LLM with constrained output can outperform a weaker LLM at comparable cost -- efficient configurations invisible to prior methods.
-
-## Key Features
-
-- **Reasoning-based Routing**: Models each LLM as a quality-cost curve rather than a single point
-- **Multi-Model Routing**: Selects from a heterogeneous pool of LLMs (0.6B to 235B parameters)
-- **Token Budget Optimization**: Searches over multiple token budgets + concise prompt
-- **KNN-based Prediction**: Uses cosine-distance-weighted KNN for quality prediction per (category, model, budget)
-- **Baseline Comparisons**: Includes CARROT (KNN, Linear), IRT (MIRT, NIRT), and UniRouter baselines
-- **RouterArena Submission**: Submitted to the [RouterArena](https://github.com/RouteWorks/RouterArena) leaderboard
-
-## Scope
-
-This public release focuses on the **RouterArena branch** of R2-Router:
-
-- category-aware routing on RouterArena queries
-- per-model, per-budget quality prediction
-- offline evaluation against sweep ground truth
-- RouterArena-format submission export
+Each LLM has 17 Ridge regressors: 15 for limited budgets (10–4000 tokens) + 1 unlimited quality + 1 unlimited token count. Total: 11 models × 17 = 187 regressors, all shipping as 1.3MB of checkpoints.
 
 ## Installation
-
-### Prerequisites
-
-- Python 3.11+
-- scikit-learn, numpy, joblib
-
-### Setup
 
 ```bash
 git clone https://github.com/jqxue1999/router.git
 cd router
-
-# Using uv (recommended)
-uv sync
-
-# Or using pip
-pip install -e .
+pip install -e .                # base (numpy, sklearn, joblib)
+pip install -e ".[embed]"       # + local Qwen3-0.6B embedding (GPU)
 ```
 
-## Public Release Notes
+Checkpoints (1.3MB) are included in the repo — no separate download needed.
 
-This working repository contains research code plus local-only assets used during development. For the public artifact:
+## Quick Start
 
-- keep `scripts/`, `ood_evaluation/`, and `unirouter/`
-- exclude `demo/`, `old_demo/`, `hf_space/`, and `hf_upload/`
-- do not commit checkpoints, submission JSONs, local logs, or sweep outputs
-- configure dataset and sweep locations through environment variables in [.env.example](/home/ji757406.ucf/router/.env.example)
+### 1. Start embedding server
 
-The RouterArena-oriented scripts preserve the current local defaults, but can now be redirected with environment variables such as `R2_SWEEP_ROOT`, `R2_ROUTER_DATA_PATH`, and `R2_CHECKPOINT_DIR`.
+```bash
+pip install vllm
+vllm serve Qwen/Qwen3-0.6B --runner pooling --port 8000
+```
 
-Public artifacts:
+### 2. Route and generate
 
-- RouterArena data: [JiaqiXue/r2-router-routerarena-data](https://huggingface.co/datasets/JiaqiXue/r2-router-routerarena-data)
-- RouterArena checkpoints: [JiaqiXue/r2-router-routerarena-checkpoints](https://huggingface.co/JiaqiXue/r2-router-routerarena-checkpoints)
+```python
+from r2_router import R2Router
+
+router = R2Router.from_pretrained(
+    "./r2_router",
+    embed_url="http://localhost:8000",              # Qwen3-0.6B embedding
+    llm_api_base="https://openrouter.ai/api/v1",   # LLM API
+    llm_api_key="sk-or-...",                        # your OpenRouter key
+)
+
+# End-to-end: embed → route → generate
+result = router.route_and_generate("What is the capital of France?")
+print(result["model"])      # e.g., "Qwen3-235B-A22B-Instruct-2507"
+print(result["budget"])     # e.g., 100  (or "unlimited")
+print(result["response"])   # LLM's answer
+```
+
+### Route only (no generation)
+
+```python
+decision = router.route_text("Solve 2x + 5 = 13")
+print(decision["model"], decision["budget"])
+# → "Qwen2.5-Math-7B-Instruct", 200
+```
+
+### CLI
+
+```bash
+# Route only
+python route.py --query "What is 2+2?" --embed-url http://localhost:8000
+
+# Route + generate
+python route.py --query "What is 2+2?" \
+    --embed-url http://localhost:8000 \
+    --llm-api-base https://openrouter.ai/api/v1 \
+    --llm-api-key sk-or-...
+
+# Adjust lambda (0=quality, 1=cost, default=0.5)
+python route.py --query "Write quicksort" --embed-url http://localhost:8000 --lambda_val 0.3
+```
+
+## LLM Pool (11 models)
+
+| Model | Input $/M | Output $/M | OpenRouter |
+|-------|-----------|------------|------------|
+| Qwen3-235B-A22B-Instruct-2507 | $0.071 | $0.10 | qwen/qwen3-235b-a22b-2507 |
+| GLM-4.5-Air | $0.13 | $0.85 | z-ai/glm-4.5-air |
+| Llama-3.1-70B-Instruct | $0.40 | $0.40 | meta-llama/llama-3.1-70b-instruct |
+| Qwen2.5-Math-7B-Instruct | $0.10 | $0.10 | self-host* |
+| Qwen2.5-Math-1.5B-Instruct | $0.04 | $0.04 | self-host* |
+| gemma-3-4b-it | $0.04 | $0.08 | google/gemma-3-4b-it |
+| Llama-3.2-3B-Instruct | $0.051 | $0.34 | meta-llama/llama-3.2-3b-instruct |
+| Mistral-7B-Instruct-v0.2 | $0.11 | $0.19 | mistralai/mistral-7b-instruct |
+| Qwen3-0.6B | $0.02 | $0.02 | self-host* |
+| gemma-3-1b-it | $0.02 | $0.04 | self-host* |
+| gemma-3-270m-it | $0.01 | $0.02 | self-host* |
+
+*Models marked "self-host" are not on OpenRouter; prices are estimated. Edit `r2_router/config.json` to adjust.
+
+Cost is computed as: `cost = input_tokens × input_price/1M + output_tokens × output_price/1M` (real USD).
+
+## Architecture
+
+```
+query ──→ Qwen3-0.6B ──→ embedding (1024d)
+              │
+              ▼
+         R2-Router (per-LLM Ridge regressors)
+              │
+              ├── For each (model, budget):
+              │     quality = Ridge.predict(embedding)
+              │     cost    = input_tokens × in_price + output_tokens × out_price
+              │     risk    = (1-λ) × quality - λ × cost
+              │
+              ▼
+         Best (model*, budget*) = argmax risk
+              │
+              ▼
+         Call model* via OpenRouter with budget prompt
+              │
+              ▼
+         Response
+```
 
 ## Project Structure
 
 ```
 r2-router/
-├── scripts/                     # RouterArena pipeline
-│   ├── category_config.py         # Shared config (models, paths, categories)
-│   ├── route_and_eval.py          # Route queries + evaluate against sweep GT
-│   ├── route_knn_export.py        # Export RouterArena submission JSON (Global KNN)
-│   ├── sweep_lambda_global_knn.py # Lambda sweep with Global KNN routing
-│   ├── train_category_predictors.py # Train KNN quality + token predictors
-│   ├── train_category_classifier.py # Train SVM category classifier
-│   ├── build_category_training_data.py # Build training_data.pkl from sweep files
-│   ├── inference_budget_sweep.py   # Budget sweep inference (vLLM)
-│   ├── inference_routerarena.py    # vLLM/API inference engine
-│   ├── eval_sweep.py              # Evaluate sweep files (writes accuracy/cost)
-│   └── *.sbatch                   # SLURM job scripts
-├── routerarena_submission/      # Local submission/embedding artifacts (not for git release)
-├── ood_evaluation/              # Out-of-distribution evaluation
-├── unirouter/                   # UniRouter integration
-├── DATA_RELEASE.md              # Data packaging and licensing guidance
-├── reproduce/                   # Minimal reproduction entrypoints
-└── artifacts/                   # Notes for assembling the public artifact
+├── route.py                     # CLI entry point
+├── r2_router/                   # Core package (self-contained)
+│   ├── __init__.py
+│   ├── router.py                  # R2Router class
+│   ├── config.json                # 11 models, prices, OpenRouter IDs
+│   └── checkpoints/               # 11 models × Ridge regressors (~1.2MB total)
+│       ├── Qwen3-235B-A22B-Instruct-2507_ridge_alpha10.0/
+│       │   ├── limited_score_predictors.joblib    # 15 budget predictors
+│       │   ├── unlimited_score_predictor.joblib   # unlimited quality
+│       │   └── unlimited_token_predictor.joblib   # unlimited token count
+│       └── ...
+└── pyproject.toml
 ```
-
-## Quick Start
-
-### RouterArena Evaluation
-
-```bash
-# Route and evaluate locally (against sweep ground truth)
-.venv/bin/python scripts/route_and_eval.py --lambda_val 0.98 --shrinkage_k 3.0
-
-# Train KNN predictors
-sbatch scripts/train_predictors.sbatch
-
-# Export submission for RouterArena
-.venv/bin/python scripts/route_knn_export.py \
-    --models 235b ministral-3b gemini-flash --lambda_val 0.85 \
-    --export routerarena_submission/submission.json
-```
-
-### RouterArena Reproduction
-
-For the public RouterArena branch, prepare the released data package and set the paths in [.env.example](/home/ji757406.ucf/router/.env.example).
-
-Minimum required environment variables:
-
-```bash
-export R2_SWEEP_ROOT=/path/to/routerarena_data_release/budget_sweep
-export R2_TRAINING_DATA_PATH=/path/to/routerarena_data_release/category_router/training_data.pkl
-export R2_EMBEDDINGS_PATH=/path/to/routerarena_data_release/embeddings/routerarena_embeddings.pkl
-export R2_ROUTER_DATA_PATH=/path/to/routerarena_data_release/routerarena_meta/router_data.json
-export R2_ROUTER_DATA_10_PATH=/path/to/routerarena_data_release/routerarena_meta/router_data_10.json
-export R2_MODEL_COST_PATH=/path/to/routerarena_data_release/routerarena_meta/model_cost.json
-```
-
-Then run:
-
-```bash
-bash reproduce/routerarena_train.sh
-bash reproduce/routerarena_eval.sh
-```
-
-The helper scripts are:
-
-- [routerarena_train.sh](/home/ji757406.ucf/router/reproduce/routerarena_train.sh): builds consolidated training data and trains RouterArena predictors
-- [routerarena_eval.sh](/home/ji757406.ucf/router/reproduce/routerarena_eval.sh): runs offline evaluation and exports a submission JSON
-
-## Evaluation Metrics
-
-Following the evaluation protocol from UniRouter (Jitkrittum et al., 2025):
-
-- **AUDC (Area Under Deferral Curve)**: Overall quality-cost tradeoff (higher is better)
-- **Peak Quality**: Maximum achievable quality [0, 1] (higher is better)
-- **QNC (Query-Normalized Cost)**: Minimum relative cost to match the best single LLM's performance (lower is better)
-
-## Main Results
-
-R2-Router is released here as a RouterArena-oriented routing system with:
-
-- per-category KNN quality predictors
-- token-aware routing objectives
-- Global KNN submission export
 
 ## Citation
-
-If you use this code, please cite:
 
 ```bibtex
 @inproceedings{r2router2026,
@@ -169,18 +152,3 @@ If you use this code, please cite:
 ## License
 
 MIT License
-
-## Data And Artifact Release
-
-This repository does not yet bundle the full research dataset. Use the guidance in [DATA_RELEASE.md](/home/ji757406.ucf/router/DATA_RELEASE.md) and [README.md](/home/ji757406.ucf/router/artifacts/README.md) to package a public release safely:
-
-- publish code separately from large data artifacts
-- verify redistribution rights for third-party benchmark content
-- release derived metadata, splits, and reconstructions when raw prompts/answers cannot be mirrored directly
-
-## Acknowledgments
-
-- [SPROUT](https://arxiv.org/abs/2502.03261) benchmark for the routing evaluation framework
-- [UniRouter](https://arxiv.org/abs/2502.08773) for dynamic LLM pool routing
-- [vLLM](https://github.com/vllm-project/vllm) for efficient LLM serving
-- [OpenRouter](https://openrouter.ai/) for LLM API access and pricing data
