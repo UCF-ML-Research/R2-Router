@@ -4,7 +4,7 @@ set -euo pipefail
 # Reproduce the RouterArena submission using Global KNN routing (Method 2).
 #
 # Prerequisites:
-#   1. Download data: https://huggingface.co/datasets/JiaqiXue/r2-router-routerarena-data
+#   1. Download data: https://huggingface.co/datasets/JiaqiXue/R2-Bench-RouterArena
 #   2. Set environment variables (see .env.example)
 #
 # Usage:
