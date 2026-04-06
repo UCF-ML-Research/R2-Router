@@ -24,10 +24,15 @@ import sys
 
 
 def print_human_readable(result, candidates, include_response):
-    print("Candidate LLMs: " + ", ".join(candidates))
+    print("Candidate LLMs:")
+    print(", ".join(candidates))
+    print()
     print(f"Selected LLM: {result['model']}")
+    print()
     print(f"Selected budget: {result['budget']}")
     if include_response:
+        print()
+        print("-" * 40)
         print("\nResponse:")
         print(result["response"])
 
