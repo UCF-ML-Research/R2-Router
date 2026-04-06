@@ -23,6 +23,8 @@ pip install -e .                # base (numpy, sklearn, joblib)
 pip install -e ".[embed]"       # + local Qwen3-0.6B embedding (GPU)
 ```
 
+For compatibility with the released checkpoints, this package pins `scikit-learn==1.7.2`.
+
 Checkpoints (1.3MB) are included in the repo — no separate download needed.
 
 ## Quick Start
