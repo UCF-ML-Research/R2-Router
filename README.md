@@ -12,7 +12,7 @@ Given a query, R2-Router:
 3. **Routes** by maximizing: `risk = (1-λ) × quality - λ × cost`
 4. **Generates** a response from the selected LLM with budget-constrained prompt
 
-Each LLM has 17 Ridge regressors: 15 for limited budgets (10–4000 tokens) + 1 unlimited quality + 1 unlimited token count. Total: 11 models × 17 = 187 regressors, all shipping as 1.3MB of checkpoints.
+Each LLM has 17 Ridge regressors: 15 for limited budgets (10-4000 tokens) + 1 unlimited quality + 1 unlimited token count. Total: 11 models x 17 = 187 regressors, all shipping as 1.3MB of checkpoints.
 
 ## Installation
 
@@ -38,11 +38,6 @@ vllm serve Qwen/Qwen3-0.6B --runner pooling --port 8000
 
 ### 2. Route and generate
 
-Example queries:
-
-1. `Solve the equation: 2x + 5 = 13`
-2. `What is the capital of France?`
-
 ```python
 from r2_router import R2Router
 
@@ -53,7 +48,7 @@ router = R2Router.from_pretrained(
     llm_api_key="sk-or-...",                        # your OpenRouter key
 )
 
-# End-to-end: embed → route → generate
+# End-to-end: embed -> route -> generate
 result = router.route_and_generate("What is the capital of France?")
 print(result["model"])      # e.g., "Qwen3-235B-A22B-Instruct-2507"
 print(result["budget"])     # e.g., 100  (or "unlimited")
@@ -65,32 +60,56 @@ print(result["response"])   # LLM's answer
 ```python
 decision = router.route_text("Solve the equation: 2x + 5 = 13")
 print(decision["model"], decision["budget"])
-# → "Qwen2.5-Math-7B-Instruct", 200
+# -> "Qwen2.5-Math-7B-Instruct", 200
 ```
 
 ### CLI
 
 ```bash
-# Route only
+# Route only (human-readable output)
 python route.py --query "What is the capital of France?" --embed-url http://localhost:8000
 
-# Route + generate (default lambda = 0.5)
+# Output:
+# Candidate LLMs:
+# Qwen3-235B-A22B-Instruct-2507, GLM-4.5-Air, Llama-3.1-70B-Instruct, ...
+#
+# Selected LLM: Qwen3-235B-A22B-Instruct-2507
+#
+# Selected budget: 100
+
+# Route + generate
 python route.py --query "What is the capital of France?" \
     --embed-url http://localhost:8000 \
     --llm-api-base https://openrouter.ai/api/v1 \
     --llm-api-key sk-or-...
 
-# Route + generate with custom lambda (0=quality, 1=cost)
+# Output:
+# Candidate LLMs:
+# Qwen3-235B-A22B-Instruct-2507, GLM-4.5-Air, ...
+#
+# Selected LLM: Qwen3-235B-A22B-Instruct-2507
+#
+# Selected budget: 100
+#
+# ----------------------------------------
+#
+# Response:
+# The capital of France is Paris.
+
+# Adjust lambda (0=quality, 1=cost, default=0.5)
 python route.py --query "Solve the equation: 2x + 5 = 13" \
     --embed-url http://localhost:8000 \
     --llm-api-base https://openrouter.ai/api/v1 \
     --llm-api-key sk-or-... \
     --lambda_val 0.3
 
-# Structured JSON output
+# Structured JSON output (for programmatic use)
 python route.py --query "What is the capital of France?" \
-    --embed-url http://localhost:8000 \
-    --json
+    --embed-url http://localhost:8000 --json
+
+# Show all (model, budget) candidates ranked by risk
+python route.py --query "What is the capital of France?" \
+    --embed-url http://localhost:8000 --verbose
 ```
 
 ## LLM Pool (11 models)
@@ -111,28 +130,28 @@ python route.py --query "What is the capital of France?" \
 
 *Models marked "self-host" are not on OpenRouter; prices are estimated. Edit `r2_router/config.json` to adjust.
 
-Cost is computed as: `cost = input_tokens × input_price/1M + output_tokens × output_price/1M` (real USD).
+Cost is computed as: `cost = input_tokens x input_price/1M + output_tokens x output_price/1M` (real USD).
 
 ## Architecture
 
 ```
-query ──→ Qwen3-0.6B ──→ embedding (1024d)
-              │
-              ▼
+query --> Qwen3-0.6B --> embedding (1024d)
+              |
+              v
          R2-Router (per-LLM Ridge regressors)
-              │
-              ├── For each (model, budget):
-              │     quality = Ridge.predict(embedding)
-              │     cost    = input_tokens × in_price + output_tokens × out_price
-              │     risk    = (1-λ) × quality - λ × cost
-              │
-              ▼
+              |
+              |-- For each (model, budget):
+              |     quality = Ridge.predict(embedding)
+              |     cost    = input_tokens x in_price + output_tokens x out_price
+              |     risk    = (1-lambda) x quality - lambda x cost
+              |
+              v
          Best (model*, budget*) = argmax risk
-              │
-              ▼
+              |
+              v
          Call model* via OpenRouter with budget prompt
-              │
-              ▼
+              |
+              v
          Response
 ```
 
@@ -145,7 +164,7 @@ r2-router/
 │   ├── __init__.py
 │   ├── router.py                  # R2Router class
 │   ├── config.json                # 11 models, prices, OpenRouter IDs
-│   └── checkpoints/               # 11 models × Ridge regressors (~1.2MB total)
+│   └── checkpoints/               # 11 models x Ridge regressors (~1.2MB total)
 │       ├── Qwen3-235B-A22B-Instruct-2507_ridge_alpha10.0/
 │       │   ├── limited_score_predictors.joblib    # 15 budget predictors
 │       │   ├── unlimited_score_predictor.joblib   # unlimited quality
@@ -153,6 +172,14 @@ r2-router/
 │       └── ...
 └── pyproject.toml
 ```
+
+## R2-Bench Dataset
+
+The training data for R2-Router is available as the **R2-Bench** dataset:
+
+[JiaqiXue/R2-Bench on HuggingFace](https://huggingface.co/datasets/JiaqiXue/R2-Bench)
+
+R2-Bench contains 30,968 queries evaluated across 10 LLMs at 16 token budget levels (10-8000 tokens), with LLM-judge quality scores. Each evaluation includes the original prompt, LLM response, actual token count, and judge correctness score (0.0-1.0).
 
 ## Citation
 
