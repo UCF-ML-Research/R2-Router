@@ -2,8 +2,6 @@
 
 **R2-Router** introduces *reasoning* into LLM routing. Instead of treating each LLM as a fixed quality-cost point, R2-Router reasons about how quality varies with output length, jointly selecting the best LLM **and** token budget.
 
-> Under review at ICML 2026.
-
 ## How It Works
 
 Given a query, R2-Router:
@@ -183,7 +181,8 @@ r2-router/
 
 The training data for R2-Router is available as the **R2-Bench** dataset:
 
-[JiaqiXue/R2-Bench on HuggingFace](https://huggingface.co/datasets/JiaqiXue/R2-Bench)
+- [R2-Bench on RouterArena](https://huggingface.co/datasets/JiaqiXue/R2-Bench-RouterArena)
+- [R2-Bench for paper](https://huggingface.co/datasets/JiaqiXue/R2-Bench)
 
 R2-Bench contains 30,968 queries evaluated across 10 LLMs at 16 token budget levels (10-8000 tokens), with LLM-judge quality scores. Each evaluation includes the original prompt, LLM response, actual token count, and judge correctness score (0.0-1.0).
 
