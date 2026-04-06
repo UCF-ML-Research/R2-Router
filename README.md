@@ -49,7 +49,7 @@ router = R2Router.from_pretrained(
 )
 
 # End-to-end: embed -> route -> generate
-result = router.route_and_generate("What is the capital of France?")
+result = router.route_and_generate("Write a Python function to calculate factorial.")
 print(result["model"])      # e.g., "Qwen3-235B-A22B-Instruct-2507"
 print(result["budget"])     # e.g., 100  (or "unlimited")
 print(result["response"])   # LLM's answer
@@ -67,7 +67,7 @@ print(decision["model"], decision["budget"])
 
 ```bash
 # Route only (human-readable output)
-python route.py --query "What is the capital of France?" --embed-url http://localhost:8000
+python route.py --query "Write a Python function to calculate factorial." --embed-url http://localhost:8000
 
 # Output:
 # Candidate LLMs:
@@ -78,7 +78,7 @@ python route.py --query "What is the capital of France?" --embed-url http://loca
 # Selected budget: 100
 
 # Route + generate
-python route.py --query "What is the capital of France?" \
+python route.py --query "Write a Python function to calculate factorial." \
     --embed-url http://localhost:8000 \
     --llm-api-base https://openrouter.ai/api/v1 \
     --llm-api-key sk-or-...
@@ -96,7 +96,7 @@ python route.py --query "What is the capital of France?" \
 # Response:
 # The capital of France is Paris.
 
-# Adjust lambda (0=quality, 1=cost, default=0.5)
+# Adjust lambda (0=quality, 1=cost, default=0.99999)
 python route.py --query "Solve the equation: 2x + 5 = 13" \
     --embed-url http://localhost:8000 \
     --llm-api-base https://openrouter.ai/api/v1 \
@@ -104,11 +104,11 @@ python route.py --query "Solve the equation: 2x + 5 = 13" \
     --lambda_val 0.3
 
 # Structured JSON output (for programmatic use)
-python route.py --query "What is the capital of France?" \
+python route.py --query "Write a Python function to calculate factorial." \
     --embed-url http://localhost:8000 --json
 
 # Show all (model, budget) candidates ranked by risk
-python route.py --query "What is the capital of France?" \
+python route.py --query "Write a Python function to calculate factorial." \
     --embed-url http://localhost:8000 --verbose
 ```
 
@@ -131,6 +131,12 @@ python route.py --query "What is the capital of France?" \
 *Models marked "self-host" are not on OpenRouter; prices are estimated. Edit `r2_router/config.json` to adjust.
 
 Cost is computed as: `cost = input_tokens x input_price/1M + output_tokens x output_price/1M` (real USD).
+
+The current online router uses absolute USD cost directly in
+`risk = (1-λ) × quality - λ × cost`. Since `quality` is in `[0,1]` but
+`cost` is usually much smaller in magnitude, meaningful cost-sensitive routing
+typically requires `λ` to be very close to `1`. The default is therefore set to
+`0.99999` instead of `0.5`.
 
 ## Architecture
 

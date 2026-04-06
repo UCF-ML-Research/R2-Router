@@ -3,7 +3,7 @@
   "method": "Ridge Regression (per-LLM, per-budget)",
   "embedding_model": "Qwen/Qwen3-0.6B",
   "embedding_dim": 1024,
-  "default_lambda": 0.5,
+  "default_lambda": 0.99999,
   "token_limits": [10, 20, 30, 40, 50, 80, 100, 150, 200, 300, 500, 800, 1200, 2000, 4000, "unlimited"],
   "models": {
     "Qwen3-235B-A22B-Instruct-2507": {

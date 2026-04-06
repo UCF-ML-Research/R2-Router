@@ -20,7 +20,7 @@ Usage:
     )
 
     # End-to-end: embed → route → generate
-    result = router.route_and_generate("What is the capital of France?")
+    result = router.route_and_generate("Write a Python function to calculate factorial.")
     print(result["model"])      # e.g., "Qwen3-235B-A22B-Instruct-2507"
     print(result["budget"])     # e.g., 100
     print(result["response"])   # LLM's answer
@@ -55,7 +55,7 @@ class R2Router:
         self,
         predictors: Dict[str, Dict],
         model_configs: Dict[str, Dict],
-        lambda_val: float = 0.5,
+        lambda_val: float = 0.99999,
         embed_url: Optional[str] = None,
         llm_api_base: Optional[str] = None,
         llm_api_key: Optional[str] = None,
@@ -81,7 +81,7 @@ class R2Router:
     def from_pretrained(
         cls,
         path: str,
-        lambda_val: float = 0.5,
+        lambda_val: float = 0.99999,
         embed_url: Optional[str] = None,
         llm_api_base: Optional[str] = None,
         llm_api_key: Optional[str] = None,
@@ -92,7 +92,7 @@ class R2Router:
 
         Args:
             path: Local directory or HuggingFace repo ID
-            lambda_val: Cost-quality tradeoff (default 0.5)
+            lambda_val: Cost-quality tradeoff (default 0.99999)
             embed_url: vLLM server URL for embedding
             llm_api_base: OpenAI-compatible API base for generation
             llm_api_key: API key for LLM endpoint

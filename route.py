@@ -4,11 +4,11 @@ R2-Router: Route a query to the optimal (LLM, token_budget) pair and generate a 
 
 Examples:
     # Route only
-    python route.py --query "What is the capital of France?" \
+    python route.py --query "Write a Python function to calculate factorial." \
         --embed-url http://localhost:8000
 
     # Route + generate via OpenRouter
-    python route.py --query "What is the capital of France?" \
+    python route.py --query "Write a Python function to calculate factorial." \
         --embed-url http://localhost:8000 \
         --llm-api-base https://openrouter.ai/api/v1 \
         --llm-api-key sk-or-...
@@ -64,8 +64,8 @@ def main():
                         help="API key for LLM endpoint")
 
     # Routing params
-    parser.add_argument("--lambda_val", type=float, default=0.5,
-                        help="Cost-quality tradeoff (0=quality, 1=cost, default: 0.5)")
+    parser.add_argument("--lambda_val", type=float, default=0.99999,
+                        help="Cost-quality tradeoff (0=quality, 1=cost, default: 0.99999)")
     parser.add_argument("--json", action="store_true",
                         help="Output full structured JSON instead of human-readable text")
     parser.add_argument("--verbose", action="store_true",
