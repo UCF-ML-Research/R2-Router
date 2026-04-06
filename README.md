@@ -17,7 +17,7 @@ Each LLM has 17 Ridge regressors: 15 for limited budgets (10–4000 tokens) + 1 
 ## Installation
 
 ```bash
-git clone https://github.com/jqxue1999/router.git
+git clone -b release-routerarena-public https://github.com/jqxue1999/router.git
 cd router
 pip install -e .                # base (numpy, sklearn, joblib)
 pip install -e ".[embed]"       # + local Qwen3-0.6B embedding (GPU)
