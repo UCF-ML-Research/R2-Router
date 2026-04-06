@@ -77,14 +77,18 @@ print(decision["model"], decision["budget"])
 # Route only
 python route.py --query "What is the capital of France?" --embed-url http://localhost:8000
 
-# Route + generate
+# Route + generate (default lambda = 0.5)
 python route.py --query "Explain what photosynthesis is in simple terms." \
     --embed-url http://localhost:8000 \
     --llm-api-base https://openrouter.ai/api/v1 \
     --llm-api-key sk-or-...
 
-# Adjust lambda (0=quality, 1=cost, default=0.5)
-python route.py --query "Write a Python function to calculate factorial." --embed-url http://localhost:8000 --lambda_val 0.3
+# Route + generate with custom lambda (0=quality, 1=cost)
+python route.py --query "Write a Python function to calculate factorial." \
+    --embed-url http://localhost:8000 \
+    --llm-api-base https://openrouter.ai/api/v1 \
+    --llm-api-key sk-or-... \
+    --lambda_val 0.3
 ```
 
 ## LLM Pool (11 models)
