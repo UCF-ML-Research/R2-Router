@@ -42,9 +42,6 @@ Example queries:
 
 1. `Solve the equation: 2x + 5 = 13`
 2. `What is the capital of France?`
-3. `Explain what photosynthesis is in simple terms.`
-4. `Write a Python function to calculate factorial.`
-5. `What are the main causes of climate change?`
 
 ```python
 from r2_router import R2Router
@@ -57,7 +54,7 @@ router = R2Router.from_pretrained(
 )
 
 # End-to-end: embed → route → generate
-result = router.route_and_generate("What are the main causes of climate change?")
+result = router.route_and_generate("What is the capital of France?")
 print(result["model"])      # e.g., "Qwen3-235B-A22B-Instruct-2507"
 print(result["budget"])     # e.g., 100  (or "unlimited")
 print(result["response"])   # LLM's answer
@@ -78,17 +75,22 @@ print(decision["model"], decision["budget"])
 python route.py --query "What is the capital of France?" --embed-url http://localhost:8000
 
 # Route + generate (default lambda = 0.5)
-python route.py --query "Explain what photosynthesis is in simple terms." \
+python route.py --query "What is the capital of France?" \
     --embed-url http://localhost:8000 \
     --llm-api-base https://openrouter.ai/api/v1 \
     --llm-api-key sk-or-...
 
 # Route + generate with custom lambda (0=quality, 1=cost)
-python route.py --query "Write a Python function to calculate factorial." \
+python route.py --query "Solve the equation: 2x + 5 = 13" \
     --embed-url http://localhost:8000 \
     --llm-api-base https://openrouter.ai/api/v1 \
     --llm-api-key sk-or-... \
     --lambda_val 0.3
+
+# Structured JSON output
+python route.py --query "What is the capital of France?" \
+    --embed-url http://localhost:8000 \
+    --json
 ```
 
 ## LLM Pool (11 models)

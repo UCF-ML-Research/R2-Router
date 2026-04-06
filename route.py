@@ -23,6 +23,15 @@ import os
 import sys
 
 
+def print_human_readable(result, candidates, include_response):
+    print("Candidate LLMs: " + ", ".join(candidates))
+    print(f"Selected LLM: {result['model']}")
+    print(f"Selected budget: {result['budget']}")
+    if include_response:
+        print("\nResponse:")
+        print(result["response"])
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="R2-Router: Route queries to optimal (LLM, token_budget) and generate responses",
@@ -52,6 +61,8 @@ def main():
     # Routing params
     parser.add_argument("--lambda_val", type=float, default=0.5,
                         help="Cost-quality tradeoff (0=quality, 1=cost, default: 0.5)")
+    parser.add_argument("--json", action="store_true",
+                        help="Output full structured JSON instead of human-readable text")
     parser.add_argument("--verbose", action="store_true",
                         help="Show all candidate options ranked by risk")
 
@@ -83,6 +94,7 @@ def main():
         embed_url=args.embed_url,
         llm_api_base=args.llm_api_base,
         llm_api_key=args.llm_api_key,
+        verbose=args.verbose,
     )
 
     # Load queries
@@ -94,6 +106,7 @@ def main():
 
     # Route (and optionally generate)
     do_generate = args.llm_api_base is not None
+    candidates = list(router.predictors.keys())
 
     for query in queries:
         if do_generate:
@@ -122,7 +135,20 @@ def main():
             if args.verbose:
                 output["all_options"] = result["all_options"]
 
-        print(json.dumps(output, ensure_ascii=False))
+        if args.json:
+            print(json.dumps(output, ensure_ascii=False))
+        else:
+            print_human_readable(output, candidates, include_response=do_generate)
+            if args.verbose and not do_generate:
+                print("\nAll options:")
+                for option in result["all_options"]:
+                    print(
+                        f"- {option['model']} @ {option['budget']}: "
+                        f"quality={option['predicted_quality']}, "
+                        f"cost=${option['predicted_cost_usd']}, risk={option['risk']}"
+                    )
+            if len(queries) > 1 and query != queries[-1]:
+                print()
 
 
 if __name__ == "__main__":

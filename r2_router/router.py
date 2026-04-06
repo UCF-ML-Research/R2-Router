@@ -85,6 +85,7 @@ class R2Router:
         embed_url: Optional[str] = None,
         llm_api_base: Optional[str] = None,
         llm_api_key: Optional[str] = None,
+        verbose: bool = False,
     ) -> "R2Router":
         """
         Load pre-trained Ridge checkpoints.
@@ -125,7 +126,8 @@ class R2Router:
         if not predictors:
             raise RuntimeError(f"No checkpoints found in {ckpt_dir}")
 
-        print(f"R2-Router loaded {len(predictors)} models: {list(predictors.keys())}")
+        if verbose:
+            print(f"R2-Router loaded {len(predictors)} models: {list(predictors.keys())}")
 
         return cls(
             predictors=predictors,
