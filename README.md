@@ -38,6 +38,14 @@ vllm serve Qwen/Qwen3-0.6B --runner pooling --port 8000
 
 ### 2. Route and generate
 
+Example queries:
+
+1. `Solve the equation: 2x + 5 = 13`
+2. `What is the capital of France?`
+3. `Explain what photosynthesis is in simple terms.`
+4. `Write a Python function to calculate factorial.`
+5. `What are the main causes of climate change?`
+
 ```python
 from r2_router import R2Router
 
@@ -49,7 +57,7 @@ router = R2Router.from_pretrained(
 )
 
 # End-to-end: embed → route → generate
-result = router.route_and_generate("What is the capital of France?")
+result = router.route_and_generate("What are the main causes of climate change?")
 print(result["model"])      # e.g., "Qwen3-235B-A22B-Instruct-2507"
 print(result["budget"])     # e.g., 100  (or "unlimited")
 print(result["response"])   # LLM's answer
@@ -58,7 +66,7 @@ print(result["response"])   # LLM's answer
 ### Route only (no generation)
 
 ```python
-decision = router.route_text("Solve 2x + 5 = 13")
+decision = router.route_text("Solve the equation: 2x + 5 = 13")
 print(decision["model"], decision["budget"])
 # → "Qwen2.5-Math-7B-Instruct", 200
 ```
@@ -67,16 +75,16 @@ print(decision["model"], decision["budget"])
 
 ```bash
 # Route only
-python route.py --query "What is 2+2?" --embed-url http://localhost:8000
+python route.py --query "What is the capital of France?" --embed-url http://localhost:8000
 
 # Route + generate
-python route.py --query "What is 2+2?" \
+python route.py --query "Explain what photosynthesis is in simple terms." \
     --embed-url http://localhost:8000 \
     --llm-api-base https://openrouter.ai/api/v1 \
     --llm-api-key sk-or-...
 
 # Adjust lambda (0=quality, 1=cost, default=0.5)
-python route.py --query "Write quicksort" --embed-url http://localhost:8000 --lambda_val 0.3
+python route.py --query "Write a Python function to calculate factorial." --embed-url http://localhost:8000 --lambda_val 0.3
 ```
 
 ## LLM Pool (11 models)
