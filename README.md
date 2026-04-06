@@ -2,6 +2,12 @@
 
 **R2-Router** introduces *reasoning* into LLM routing. Instead of treating each LLM as a fixed quality-cost point, R2-Router reasons about how quality varies with output length, jointly selecting the best LLM **and** token budget.
 
+This `routerarena` branch tracks the **RouterArena** version of R2-Router.
+For the released RouterArena checkpoints and self-contained inference package,
+use the Hugging Face repository:
+
+- [JiaqiXue/R2-Router-RouterArena](https://huggingface.co/JiaqiXue/R2-Router-RouterArena)
+
 ## How It Works
 
 Given a query, R2-Router:
@@ -15,7 +21,7 @@ Each LLM has 17 Ridge regressors: 15 for limited budgets (10-4000 tokens) + 1 un
 ## Installation
 
 ```bash
-git clone -b release-routerarena-public https://github.com/jqxue1999/router.git
+git clone -b routerarena https://github.com/UCF-ML-Research/R2-Router.git
 cd router
 uv venv .venv --python 3.12
 uv pip install --python .venv/bin/python -e .
@@ -24,9 +30,20 @@ uv pip install --python .venv/bin/python -e ".[embed]"
 
 For compatibility with the released checkpoints, this package pins `scikit-learn==1.7.2`.
 
-Checkpoints (1.3MB) are included in the repo — no separate download needed.
+This branch focuses on RouterArena reproduction scripts and documentation.
+For the released RouterArena checkpoints and self-contained inference package,
+download from Hugging Face.
 
 ## Quick Start
+
+### Download released RouterArena package
+
+```python
+from huggingface_hub import snapshot_download
+
+path = snapshot_download("JiaqiXue/R2-Router-RouterArena")
+print(path)
+```
 
 ### 1. Start embedding server
 
@@ -37,35 +54,51 @@ Checkpoints (1.3MB) are included in the repo — no separate download needed.
 ### 2. Route and generate
 
 ```python
-from r2_router import R2Router
+import sys
+from huggingface_hub import snapshot_download
+
+path = snapshot_download("JiaqiXue/R2-Router-RouterArena")
+sys.path.insert(0, path)
+
+from router import R2Router
 
 router = R2Router.from_pretrained(
-    "./r2_router",
-    embed_url="http://localhost:8000",              # Qwen3-0.6B embedding
-    llm_api_base="https://openrouter.ai/api/v1",   # LLM API
-    llm_api_key="sk-or-...",                        # your OpenRouter key
+    path,
+    embed_url="http://localhost:8000",
 )
 
-# End-to-end: embed -> route -> generate
-result = router.route_and_generate("Write a Python function to calculate factorial.")
-print(result["model"])      # e.g., "Qwen3-235B-A22B-Instruct-2507"
-print(result["budget"])     # e.g., 100  (or "unlimited")
-print(result["response"])   # LLM's answer
+# Route
+result = router.route_text("Write a Python function to calculate factorial.")
+print(result)
 ```
 
-### Route only (no generation)
+### Reproduce RouterArena results from this repo
 
-```python
-decision = router.route_text("Solve the equation: 2x + 5 = 13")
-print(decision["model"], decision["budget"])
-# -> "Qwen2.5-Math-7B-Instruct", 200
+```bash
+# 1. Download RouterArena data release:
+#    https://huggingface.co/datasets/JiaqiXue/R2-Bench-RouterArena
+
+# 2. Set paths in your shell (see .env.example)
+export R2_SWEEP_ROOT=/path/to/budget_sweep
+export R2_TRAINING_DATA_PATH=/path/to/category_router/training_data.pkl
+export R2_ROUTER_DATA_PATH=/path/to/routerarena_meta/router_data.json
+export R2_ROUTER_DATA_10_PATH=/path/to/routerarena_meta/router_data_10.json
+export R2_MODEL_COST_PATH=/path/to/routerarena_meta/model_cost.json
+
+# 3. Reproduce exported routing submission
+bash reproduce/routerarena.sh
+
+# 4. Or run the evaluation pipeline
+bash reproduce/routerarena_eval.sh
 ```
 
 ### CLI
 
 ```bash
-# Route only (human-readable output)
-python route.py --query "Write a Python function to calculate factorial." --embed-url http://localhost:8000
+# Route with checkpoints from HF
+python route.py --query "Write a Python function to calculate factorial." \
+    --hf-repo JiaqiXue/R2-Router-RouterArena \
+    --embed-url http://localhost:8000
 
 # Output:
 # Candidate LLMs:
@@ -75,38 +108,20 @@ python route.py --query "Write a Python function to calculate factorial." --embe
 #
 # Selected budget: 100
 
-# Route + generate
-python route.py --query "Write a Python function to calculate factorial." \
-    --embed-url http://localhost:8000 \
-    --llm-api-base https://openrouter.ai/api/v1 \
-    --llm-api-key sk-or-...
-
-# Output:
-# Candidate LLMs:
-# Qwen3-235B-A22B-Instruct-2507, GLM-4.5-Air, ...
-#
-# Selected LLM: Qwen3-235B-A22B-Instruct-2507
-#
-# Selected budget: 100
-#
-# ----------------------------------------
-#
-# Response:
-# The capital of France is Paris.
-
-# Adjust lambda (0=quality, 1=cost, default=0.99999)
+# Adjust lambda (RouterArena checkpoints may use a different tuned value)
 python route.py --query "Solve the equation: 2x + 5 = 13" \
+    --hf-repo JiaqiXue/R2-Router-RouterArena \
     --embed-url http://localhost:8000 \
-    --llm-api-base https://openrouter.ai/api/v1 \
-    --llm-api-key sk-or-... \
-    --lambda_val 0.3
+    --lambda_val 0.999
 
 # Structured JSON output (for programmatic use)
 python route.py --query "Write a Python function to calculate factorial." \
+    --hf-repo JiaqiXue/R2-Router-RouterArena \
     --embed-url http://localhost:8000 --json
 
 # Show all (model, budget) candidates ranked by risk
 python route.py --query "Write a Python function to calculate factorial." \
+    --hf-repo JiaqiXue/R2-Router-RouterArena \
     --embed-url http://localhost:8000 --verbose
 ```
 
